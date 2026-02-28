@@ -3,74 +3,93 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Titan 25T Bend Calculator</title>
+  <title>Titan 25T Bend Calculator — Reframe Systems</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3348;
-      --accent: #4f8ef7; --accent2: #7c5cfc; --green: #34d399; --yellow: #fbbf24;
-      --red: #f87171; --text: #e8eaf6; --muted: #8890b5; --radius: 10px;
+      --bg: #0f1113; --surface: #181b1e; --surface2: #21252a; --border: #2e3338;
+      --accent: #0dab4a; --accent2: #0a8a3b; --green: #3dbd6e; --yellow: #fbbf24;
+      --red: #f87171; --text: #e8eaed; --muted: #7a8490; --radius: 10px;
+      --navy: #002026;
     }
-    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; padding: 24px 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; padding: 24px 16px; }
     .container { max-width: 960px; margin: 0 auto; }
 
-    header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
-    .logo { width: 44px; height: 44px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
-    h1 { font-size: 22px; font-weight: 700; }
-    h1 span { color: var(--muted); font-weight: 400; font-size: 14px; display: block; margin-top: 2px; }
+    header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .logo-wrap { display: flex; align-items: center; flex-shrink: 0; text-decoration: none; }
+    .logo-icon { height: 64px; width: auto; flex-shrink: 0; }
+    .header-divider { width: 1px; height: 36px; background: var(--border); flex-shrink: 0; }
+    .header-tool { }
+    h1 { font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    h1 span { color: var(--muted); font-weight: 400; font-size: 13px; display: block; margin-top: 3px; font-family: 'Inter', system-ui, sans-serif; letter-spacing: 0; }
 
-    /* Excel loader bar */
-    .excel-bar {
+    /* Data source connection bar */
+    .conn-bar {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 14px 18px;
+      padding: 16px 18px;
       margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      flex-wrap: wrap;
     }
-    .excel-bar.loaded { border-color: var(--green); background: rgba(52,211,153,0.06); }
-    .excel-bar.loaded .eb-icon { background: var(--green); }
+    .conn-bar.connected { border-color: var(--accent); }
+    .conn-bar.error     { border-color: var(--red); }
 
-    .eb-icon {
-      width: 36px; height: 36px; border-radius: 8px;
-      background: var(--surface2);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px; flex-shrink: 0;
-      transition: background 0.2s;
+    .conn-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .conn-icon { font-size: 18px; line-height: 1; }
+    .conn-title { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+    .conn-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px;
+                  background: rgba(13,171,74,0.15); color: var(--accent); border: 1px solid var(--accent);
+                  display: none; }
+    .conn-bar.connected .conn-badge { display: inline; }
+
+    .conn-input-row { display: flex; gap: 8px; align-items: center; }
+    .gs-url-input {
+      flex: 1; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 7px; color: var(--text); font-size: 12px; padding: 9px 12px;
+      outline: none; transition: border-color 0.15s; font-family: 'Inter', monospace;
+      min-width: 0;
     }
-    .eb-info { flex: 1; min-width: 180px; }
-    .eb-title { font-size: 13px; font-weight: 600; color: var(--text); }
-    .eb-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
-    .eb-sub.ok { color: var(--green); }
-
-    .eb-stats { display: flex; gap: 16px; flex-wrap: wrap; }
-    .eb-stat { text-align: center; }
-    .eb-stat-val { font-size: 18px; font-weight: 700; font-family: 'Consolas', monospace; color: var(--green); }
-    .eb-stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .gs-url-input:focus { border-color: var(--accent); }
+    .gs-url-input::placeholder { color: var(--muted); }
 
     .load-btn {
       display: flex; align-items: center; gap: 7px;
       background: var(--accent); color: #fff;
       border: none; border-radius: 8px;
       padding: 9px 16px; font-size: 13px; font-weight: 600;
-      cursor: pointer; transition: opacity 0.15s; white-space: nowrap;
+      cursor: pointer; transition: opacity 0.15s; white-space: nowrap; flex-shrink: 0;
     }
     .load-btn:hover { opacity: 0.85; }
+    .load-btn:disabled { opacity: 0.45; cursor: default; }
     .load-btn.secondary {
       background: var(--surface2); color: var(--muted);
-      border: 1px solid var(--border);
+      border: 1px solid var(--border); font-size: 12px; padding: 9px 12px;
     }
+    .load-btn.secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    .conn-status { display: flex; align-items: center; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
+    .conn-sub { font-size: 11px; color: var(--muted); flex: 1; }
+    .conn-sub.ok  { color: var(--accent); }
+    .conn-sub.err { color: var(--red); }
+    .eb-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+    .eb-stat { text-align: center; }
+    .eb-stat-val { font-size: 18px; font-weight: 700; font-family: 'Consolas', monospace; color: var(--green); }
+    .eb-stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .conn-divider { display: flex; align-items: center; gap: 10px; margin: 12px 0 10px; }
+    .conn-divider::before, .conn-divider::after { content:''; flex:1; height:1px; background: var(--border); }
+    .conn-divider span { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
+
     #file-input { display: none; }
 
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
 
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
-    .card h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 16px; }
+    .card h2 { font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 16px; }
 
     .field { margin-bottom: 14px; }
     .field:last-child { margin-bottom: 0; }
@@ -90,8 +109,8 @@
     .die-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .die-btn { padding: 10px 8px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--text); cursor: pointer; transition: all 0.15s; text-align: left; position: relative; }
     .die-btn:hover { border-color: var(--accent); }
-    .die-btn.active { border-color: var(--accent); background: rgba(79,142,247,0.12); }
-    .die-btn.acute-active { border-color: var(--accent2); background: rgba(124,92,252,0.12); }
+    .die-btn.active { border-color: var(--accent); background: rgba(13,171,74,0.12); }
+    .die-btn.acute-active { border-color: var(--accent2); background: rgba(0,97,41,0.15); }
     .die-btn.has-data { border-color: var(--green) !important; }
     .die-name { font-size: 12px; font-weight: 600; }
     .die-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
@@ -111,7 +130,7 @@
     .results-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     @media (max-width: 640px) { .results-grid { grid-template-columns: 1fr 1fr; } }
     .result-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
-    .result-card.highlight  { border-color: var(--accent); background: rgba(79,142,247,0.08); }
+    .result-card.highlight  { border-color: var(--accent); background: rgba(13,171,74,0.08); }
     .result-card.empirical  { border-color: var(--green);  background: rgba(52,211,153,0.08); }
     .result-card.no-data    { border-color: var(--border); opacity: 0.5; }
     .result-card.warn-card  { border-color: var(--yellow); background: rgba(251,191,36,0.08); }
@@ -144,7 +163,7 @@
     .tonnage-track { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; border: 1px solid var(--border); }
     .tonnage-fill  { height: 100%; border-radius: 4px; transition: width 0.3s, background 0.3s; }
 
-    .info-box { background: rgba(79,142,247,0.07); border: 1px solid rgba(79,142,247,0.2); border-radius: 7px; padding: 10px 12px; font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.6; }
+    .info-box { background: rgba(13,171,74,0.07); border: 1px solid rgba(13,171,74,0.2); border-radius: 7px; padding: 10px 12px; font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.6; }
     .info-box strong { color: var(--accent); }
     .info-box.green-box { background: rgba(52,211,153,0.07); border-color: rgba(52,211,153,0.25); }
     .info-box.green-box strong { color: var(--green); }
@@ -166,28 +185,67 @@
 <div class="container">
 
   <header>
-    <div class="logo">📐</div>
-    <div>
+    <a class="logo-wrap" href="https://www.reframe.systems" target="_blank">
+      <!-- Reframe Systems full logo (official SVG, text recolored for dark bg) -->
+      <svg class="logo-icon" viewBox="0 0 290 284" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Icon: 3-path organic house -->
+        <path d="M202.831 54.3792C205.244 56.6989 204.583 60.7432 201.46 61.9076C192.33 65.3118 182.432 67.175 172.092 67.175C146.93 67.175 124.382 56.1409 109.155 38.7132C107.535 36.859 107.739 34.0544 109.513 32.3502L141.464 1.64528C143.284 -0.103442 146.137 -0.10344 147.956 1.64528L202.831 54.3792Z" fill="#0DAB4A"/>
+        <path d="M215.489 77.9013C215.489 75.0927 213.101 72.8792 210.359 73.3024C176.783 78.4857 149.657 103.535 141.039 136.237C140.274 139.141 142.51 141.891 145.478 141.891L210.772 141.891C213.377 141.891 215.489 139.752 215.489 137.114L215.489 77.9013Z" fill="#0DAB4A"/>
+        <path d="M121.34 141.891C123.361 141.891 125.171 140.59 125.742 138.626C127.994 130.886 129.203 122.693 129.203 114.214C129.203 87.7109 117.395 64.0012 98.8164 48.1863C97.044 46.6776 94.4464 46.8289 92.7669 48.4429L75.4015 65.1309C74.4631 66.0328 73.9316 67.2854 73.9316 68.5957V137.114C73.9316 139.752 76.0431 141.891 78.6477 141.891H121.34Z" fill="#0DAB4A"/>
+        <!-- Wordmark: "Reframe" -->
+        <path d="M270.308 226.957C266.017 226.957 262.314 226.063 259.198 224.275C256.082 222.461 253.681 219.907 251.995 216.612C250.335 213.318 249.505 209.435 249.505 204.966C249.505 200.547 250.335 196.678 251.995 193.357C253.655 190.011 255.992 187.406 259.006 185.542C262.02 183.677 265.57 182.745 269.657 182.745C272.288 182.745 274.778 183.166 277.128 184.009C279.503 184.852 281.597 186.155 283.411 187.917C285.25 189.679 286.693 191.927 287.74 194.66C288.787 197.367 289.311 200.598 289.311 204.353V207.494H254.217V200.713H284.292L279.58 202.705C279.58 200.279 279.209 198.172 278.468 196.384C277.728 194.571 276.63 193.153 275.174 192.131C273.718 191.11 271.904 190.599 269.733 190.599C267.562 190.599 265.711 191.11 264.178 192.131C262.646 193.153 261.484 194.532 260.692 196.269C259.9 197.98 259.504 199.896 259.504 202.016V206.728C259.504 209.333 259.951 211.568 260.845 213.433C261.765 215.272 263.042 216.676 264.676 217.647C266.336 218.617 268.265 219.103 270.461 219.103C271.892 219.103 273.194 218.898 274.369 218.49C275.57 218.081 276.591 217.468 277.434 216.651C278.302 215.808 278.967 214.774 279.426 213.548L288.851 214.659C288.238 217.136 287.101 219.307 285.441 221.172C283.807 223.011 281.699 224.441 279.12 225.462C276.566 226.459 273.628 226.957 270.308 226.957Z" fill="#e8eaed"/>
+        <path d="M184.47 226.114V183.281H194.086V190.599H194.622C195.516 188.147 196.998 186.231 199.066 184.852C201.135 183.447 203.587 182.745 206.422 182.745C209.334 182.745 211.786 183.447 213.778 184.852C215.77 186.257 217.162 188.172 217.954 190.599H218.414C219.384 188.224 220.993 186.321 223.241 184.89C225.489 183.46 228.171 182.745 231.287 182.745C235.22 182.745 238.425 183.997 240.903 186.5C243.406 188.977 244.657 192.604 244.657 197.38V226.114H234.543V198.912C234.543 196.282 233.828 194.353 232.398 193.127C230.993 191.876 229.269 191.25 227.225 191.25C224.799 191.25 222.909 192.016 221.555 193.549C220.202 195.056 219.525 196.997 219.525 199.372V226.114H209.564V198.529C209.564 196.307 208.913 194.545 207.61 193.242C206.307 191.914 204.583 191.25 202.438 191.25C200.982 191.25 199.654 191.621 198.453 192.361C197.253 193.102 196.295 194.136 195.58 195.464C194.89 196.793 194.546 198.325 194.546 200.062V226.114H184.47Z" fill="#e8eaed"/>
+        <path d="M155.218 226.995C152.486 226.995 150.034 226.51 147.863 225.539C145.692 224.543 143.98 223.087 142.729 221.172C141.477 219.256 140.852 216.893 140.852 214.084C140.852 211.683 141.299 209.691 142.192 208.107C143.086 206.524 144.3 205.259 145.832 204.314C147.39 203.369 149.14 202.654 151.081 202.169C153.022 201.658 155.027 201.301 157.096 201.096C159.624 200.815 161.668 200.573 163.226 200.368C164.784 200.164 165.907 199.832 166.597 199.372C167.312 198.912 167.67 198.197 167.67 197.227V197.035C167.67 194.966 167.057 193.357 165.831 192.208C164.605 191.059 162.817 190.484 160.467 190.484C157.99 190.484 156.023 191.02 154.567 192.093C153.137 193.166 152.166 194.43 151.655 195.886L142.269 194.545C143.01 191.94 144.236 189.769 145.947 188.032C147.658 186.27 149.74 184.954 152.192 184.086C154.669 183.192 157.402 182.745 160.39 182.745C162.434 182.745 164.477 182.988 166.52 183.473C168.564 183.933 170.441 184.724 172.152 185.848C173.863 186.972 175.23 188.479 176.252 190.369C177.273 192.259 177.784 194.622 177.784 197.457V226.114H168.091V220.214H167.785C167.172 221.389 166.303 222.5 165.179 223.547C164.081 224.569 162.702 225.399 161.042 226.037C159.407 226.676 157.466 226.995 155.218 226.995ZM157.785 219.562C159.829 219.562 161.591 219.167 163.072 218.375C164.554 217.557 165.703 216.485 166.52 215.157C167.338 213.803 167.746 212.334 167.746 210.751V205.732C167.414 205.987 166.878 206.23 166.137 206.46C165.397 206.664 164.554 206.856 163.609 207.035C162.664 207.213 161.731 207.367 160.812 207.494C159.918 207.622 159.139 207.724 158.475 207.801C156.968 208.005 155.614 208.35 154.414 208.835C153.239 209.295 152.307 209.933 151.617 210.751C150.928 211.568 150.583 212.628 150.583 213.931C150.583 215.795 151.26 217.2 152.613 218.145C153.967 219.09 155.691 219.562 157.785 219.562Z" fill="#e8eaed"/>
+        <path d="M116.312 226.113V183.281H126.082V190.483H126.542C127.308 187.98 128.649 186.065 130.564 184.737C132.48 183.383 134.664 182.706 137.116 182.706C137.652 182.706 138.265 182.732 138.955 182.783C139.67 182.834 140.257 182.898 140.717 182.974V192.246C140.283 192.092 139.606 191.965 138.686 191.863C137.767 191.76 136.886 191.709 136.043 191.709C134.178 191.709 132.518 192.105 131.062 192.897C129.607 193.689 128.457 194.774 127.614 196.153C126.797 197.533 126.388 199.142 126.388 200.981V226.113H116.312Z" fill="#e8eaed"/>
+        <path d="M112.039 183.281V191.097H86.792V183.281H112.039ZM93.0751 226.114V179.259C93.0751 176.372 93.6753 173.972 94.8757 172.056C96.0762 170.14 97.6853 168.71 99.703 167.765C101.746 166.82 103.994 166.348 106.446 166.348C108.208 166.348 109.766 166.488 111.12 166.769C112.499 167.05 113.508 167.305 114.146 167.535L112.078 175.351C111.669 175.198 111.145 175.057 110.507 174.929C109.868 174.776 109.14 174.699 108.323 174.699C106.459 174.699 105.118 175.159 104.3 176.079C103.509 176.998 103.113 178.301 103.113 179.986V226.114H93.0751Z" fill="#e8eaed"/>
+        <path d="M66.5815 226.957C62.2906 226.957 58.5872 226.063 55.4712 224.275C52.3551 222.461 49.9543 219.907 48.2686 216.612C46.6084 213.318 45.7783 209.435 45.7783 204.966C45.7783 200.547 46.6084 196.678 48.2686 193.357C49.9287 190.011 52.2658 187.406 55.2796 185.542C58.2934 183.677 61.8437 182.745 65.9302 182.745C68.561 182.745 71.0512 183.166 73.401 184.009C75.7763 184.852 77.8707 186.155 79.6841 187.917C81.5231 189.679 82.9661 191.927 84.0133 194.66C85.0605 197.367 85.5841 200.598 85.5841 204.353V207.494H50.4906V200.713H80.5653L75.8529 202.705C75.8529 200.279 75.4826 198.172 74.7419 196.384C74.0012 194.571 72.9029 193.153 71.4471 192.131C69.9913 191.11 68.1778 190.599 66.0068 190.599C63.8359 190.599 61.9841 191.11 60.4517 192.131C58.9192 193.153 57.7571 194.532 56.9653 196.269C56.1735 197.98 55.7777 199.896 55.7777 202.016V206.728C55.7777 209.333 56.2246 211.568 57.1186 213.433C58.038 215.272 59.3151 216.676 60.9497 217.647C62.6099 218.617 64.5382 219.103 66.7348 219.103C68.1651 219.103 69.4677 218.898 70.6426 218.49C71.843 218.081 72.8646 217.468 73.7075 216.651C74.5759 215.808 75.2399 214.774 75.6997 213.548L85.1243 214.659C84.5114 217.136 83.3748 219.307 81.7146 221.172C80.08 223.011 77.9728 224.441 75.3932 225.462C72.8391 226.459 69.9019 226.957 66.5815 226.957Z" fill="#e8eaed"/>
+        <path d="M1.31738 226.114V169.03H22.7336C27.1266 169.03 30.8046 169.796 33.7673 171.328C36.7556 172.861 39.016 175.006 40.5485 177.765C42.0809 180.498 42.8472 183.678 42.8472 187.304C42.8472 190.957 42.0682 194.124 40.5102 196.806C38.9777 199.488 36.7045 201.556 33.6907 203.012C30.6768 204.468 26.9734 205.196 22.5803 205.196H7.37062V196.652H21.1628C23.7424 196.652 25.8496 196.295 27.4842 195.58C29.1444 194.865 30.3576 193.817 31.1238 192.438C31.9156 191.033 32.3115 189.322 32.3115 187.304C32.3115 185.287 31.9156 183.563 31.1238 182.132C30.332 180.677 29.1188 179.578 27.4842 178.838C25.8496 178.071 23.7297 177.688 21.1245 177.688H11.6615V226.114H1.31738ZM33.3842 226.114L19.5537 200.215H30.8173L44.9543 226.114H33.3842Z" fill="#e8eaed"/>
+        <!-- Wordmark: "Systems" -->
+        <path d="M278.847 268.634C277.035 268.634 275.466 268.345 274.141 267.767C272.815 267.178 271.773 266.363 271.015 265.321C270.267 264.267 269.842 263.05 269.74 261.668H272.9C272.991 262.619 273.314 263.406 273.869 264.029C274.435 264.652 275.155 265.117 276.027 265.423C276.899 265.728 277.839 265.881 278.847 265.881C280.014 265.881 281.061 265.689 281.99 265.304C282.93 264.919 283.672 264.381 284.216 263.69C284.76 262.999 285.032 262.189 285.032 261.26C285.032 260.422 284.794 259.742 284.318 259.221C283.842 258.7 283.219 258.275 282.449 257.947C281.69 257.618 280.863 257.33 279.968 257.08L276.876 256.197C274.894 255.631 273.325 254.821 272.17 253.767C271.026 252.703 270.454 251.315 270.454 249.605C270.454 248.189 270.833 246.954 271.592 245.901C272.362 244.836 273.399 244.009 274.701 243.42C276.015 242.831 277.477 242.537 279.085 242.537C280.716 242.537 282.166 242.831 283.434 243.42C284.703 243.998 285.711 244.791 286.459 245.799C287.206 246.796 287.603 247.928 287.648 249.197H284.658C284.511 247.951 283.91 246.982 282.857 246.291C281.815 245.601 280.523 245.255 278.983 245.255C277.873 245.255 276.899 245.436 276.061 245.799C275.222 246.161 274.571 246.66 274.107 247.294C273.642 247.928 273.41 248.653 273.41 249.469C273.41 250.364 273.688 251.088 274.243 251.643C274.798 252.187 275.455 252.612 276.214 252.918C276.984 253.224 277.68 253.467 278.303 253.648L280.852 254.362C281.509 254.543 282.239 254.787 283.044 255.093C283.859 255.398 284.641 255.812 285.388 256.333C286.147 256.854 286.77 257.522 287.257 258.338C287.744 259.142 287.988 260.139 287.988 261.328C287.988 262.687 287.631 263.922 286.918 265.032C286.204 266.131 285.168 267.008 283.808 267.665C282.449 268.311 280.795 268.634 278.847 268.634Z" fill="#7a8490"/>
+        <path d="M218.401 242.876H222.071L230.668 263.877H230.974L239.571 242.876H243.36V268.192H240.353V248.959H240.115L232.147 268.192H229.394L221.528 248.959H221.29V268.192H218.401V242.876Z" fill="#7a8490"/>
+        <path d="M176.271 268.192V242.876H191.562V245.595H179.329V254.056H190.746V256.775H179.329V265.474H191.732V268.192H176.271Z" fill="#7a8490"/>
+        <path d="M131.218 245.595V242.876H150.213V245.595H142.262V268.192H139.203V245.595H131.218Z" fill="#7a8490"/>
+        <path d="M97.1059 268.634C95.2936 268.634 93.7248 268.345 92.3995 267.767C91.0743 267.178 90.0322 266.363 89.2733 265.321C88.5257 264.267 88.101 263.05 87.999 261.668H91.1592C91.2499 262.619 91.5727 263.406 92.1277 264.029C92.694 264.652 93.4133 265.117 94.2855 265.423C95.1576 265.728 96.0978 265.881 97.1059 265.881C98.2725 265.881 99.3203 265.689 100.249 265.304C101.189 264.919 101.931 264.381 102.475 263.69C103.019 262.999 103.29 262.189 103.29 261.26C103.29 260.422 103.052 259.742 102.577 259.221C102.101 258.7 101.478 258.275 100.708 257.947C99.9489 257.618 99.122 257.33 98.2272 257.08L95.135 256.197C93.1528 255.631 91.584 254.821 90.4286 253.767C89.2846 252.703 88.7126 251.315 88.7126 249.605C88.7126 248.189 89.0921 246.954 89.851 245.901C90.6212 244.836 91.6576 244.009 92.9602 243.42C94.2741 242.831 95.7353 242.537 97.3437 242.537C98.9748 242.537 100.425 242.831 101.693 243.42C102.962 243.998 103.97 244.791 104.718 245.799C105.465 246.796 105.862 247.928 105.907 249.197H102.917C102.769 247.951 102.169 246.982 101.116 246.291C100.074 245.601 98.7822 245.255 97.2418 245.255C96.1317 245.255 95.1576 245.436 94.3194 245.799C93.4812 246.161 92.83 246.66 92.3656 247.294C91.9011 247.928 91.6689 248.653 91.6689 249.469C91.6689 250.364 91.9464 251.088 92.5015 251.643C93.0565 252.187 93.7135 252.612 94.4724 252.918C95.2426 253.224 95.9392 253.467 96.5622 253.648L99.1107 254.362C99.7677 254.543 100.498 254.787 101.302 255.093C102.118 255.398 102.9 255.812 103.647 256.333C104.406 256.854 105.029 257.522 105.516 258.338C106.003 259.142 106.247 260.139 106.247 261.328C106.247 262.687 105.89 263.922 105.176 265.032C104.463 266.131 103.426 267.008 102.067 267.665C100.708 268.311 99.0541 268.634 97.1059 268.634Z" fill="#7a8490"/>
+        <path d="M42.4365 242.876H45.9365L52.9706 254.702H53.2764L60.2764 242.876H63.8104L54.6356 257.76V268.192H51.5773V257.76L42.4365 242.876Z" fill="#7a8490"/>
+        <path d="M9.10684 268.634C7.29453 268.634 5.72576 268.345 4.40051 267.767C3.07526 267.178 2.03318 266.363 1.27428 265.321C0.526702 264.267 0.101942 263.05 0 261.668H3.16021C3.25083 262.619 3.57364 263.406 4.12866 264.029C4.69501 264.652 5.41427 265.117 6.28644 265.423C7.15861 265.728 8.09874 265.881 9.10684 265.881C10.2735 265.881 11.3213 265.689 12.2501 265.304C13.1902 264.919 13.9321 264.381 14.4758 263.69C15.0195 262.999 15.2913 262.189 15.2913 261.26C15.2913 260.422 15.0535 259.742 14.5777 259.221C14.102 258.7 13.479 258.275 12.7088 257.947C11.9499 257.618 11.123 257.33 10.2282 257.08L7.13596 256.197C5.15375 255.631 3.58497 254.821 2.42962 253.767C1.2856 252.703 0.713596 251.315 0.713596 249.605C0.713596 248.189 1.09305 246.954 1.85195 245.901C2.62218 244.836 3.65859 244.009 4.96119 243.42C6.27511 242.831 7.73628 242.537 9.34471 242.537C10.9758 242.537 12.4256 242.831 13.6942 243.42C14.9629 243.998 15.971 244.791 16.7185 245.799C17.4661 246.796 17.8625 247.928 17.9079 249.197H14.9175C14.7703 247.951 14.17 246.982 13.1166 246.291C12.0745 245.601 10.7832 245.255 9.24276 245.255C8.13273 245.255 7.15861 245.436 6.32042 245.799C5.48223 246.161 4.83093 246.66 4.36653 247.294C3.90212 247.928 3.66992 248.653 3.66992 249.469C3.66992 250.364 3.94743 251.088 4.50245 251.643C5.05747 252.187 5.71443 252.612 6.47333 252.918C7.24356 253.224 7.94017 253.467 8.56315 253.648L11.1117 254.362C11.7687 254.543 12.4993 254.787 13.3035 255.093C14.119 255.398 14.9006 255.812 15.6481 256.333C16.407 256.854 17.03 257.522 17.5171 258.338C18.0041 259.142 18.2477 260.139 18.2477 261.328C18.2477 262.687 17.8909 263.922 17.1773 265.032C16.4637 266.131 15.4273 267.008 14.068 267.665C12.7088 268.311 11.0551 268.634 9.10684 268.634Z" fill="#7a8490"/>
+      </svg>
+    </a>
+    <div class="header-divider"></div>
+    <div class="header-tool">
       <h1>Titan 25T — Bend Calculator
         <span>Bend Deduction · Flat Length · Tonnage Check · Live Excel Reference</span>
       </h1>
     </div>
   </header>
 
-  <!-- Excel loader bar -->
-  <div class="excel-bar" id="excel-bar">
-    <div class="eb-icon" id="eb-icon">📊</div>
-    <div class="eb-info">
-      <div class="eb-title">Titan25T_Bend_Reference.xlsx</div>
-      <div class="eb-sub" id="eb-sub">Load your spreadsheet to pull in K-factors and empirical bend data</div>
+  <!-- Data source connection bar -->
+  <div class="conn-bar" id="conn-bar">
+    <div class="conn-header">
+      <span class="conn-icon">🔗</span>
+      <span class="conn-title">Live Google Sheets Connection</span>
+      <span class="conn-badge">● LIVE</span>
     </div>
-    <div class="eb-stats" id="eb-stats" style="display:none">
-      <div class="eb-stat"><div class="eb-stat-val" id="eb-bend-count">0</div><div class="eb-stat-lbl">Test Bends</div></div>
-      <div class="eb-stat"><div class="eb-stat-val" id="eb-combo-count">0</div><div class="eb-stat-lbl">Combos Tested</div></div>
+    <div class="conn-input-row">
+      <input class="gs-url-input" id="gs-url-input" type="url"
+        placeholder="Paste your Google Sheet URL here…"
+        onkeydown="if(event.key==='Enter')connectGS()" />
+      <button class="load-btn" id="gs-connect-btn" onclick="connectGS()">Connect</button>
+      <button class="load-btn secondary" id="gs-refresh-btn" style="display:none" onclick="connectGS(true)" title="Re-fetch latest data">↺ Sync</button>
     </div>
-    <input type="file" id="file-input" accept=".xlsx" onchange="loadExcel(this)" />
-    <button class="load-btn secondary" id="reload-btn" style="display:none" onclick="document.getElementById('file-input').click()">↺ Reload</button>
-    <button class="load-btn" onclick="document.getElementById('file-input').click()">📂 Load Excel</button>
+    <div class="conn-status">
+      <span class="conn-sub" id="conn-sub">Paste your sheet URL above — sheet must be shared "Anyone with the link can view"</span>
+      <div class="eb-stats" id="eb-stats" style="display:none">
+        <div class="eb-stat"><div class="eb-stat-val" id="eb-bend-count">0</div><div class="eb-stat-lbl">Test Bends</div></div>
+        <div class="eb-stat"><div class="eb-stat-val" id="eb-combo-count">0</div><div class="eb-stat-lbl">Combos Tested</div></div>
+        <div class="eb-stat"><div class="eb-stat-val" id="eb-last-sync">—</div><div class="eb-stat-lbl">Last Sync</div></div>
+      </div>
+    </div>
+    <div class="conn-divider"><span>or upload local Excel file</span></div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="file" id="file-input" accept=".xlsx" onchange="loadExcel(this)" />
+      <button class="load-btn secondary" onclick="document.getElementById('file-input').click()">📂 Load Excel File</button>
+      <span style="font-size:11px;color:var(--muted);">Works offline — no live sync</span>
+    </div>
   </div>
 
   <div class="grid2">
@@ -466,7 +524,144 @@ function getExcelKey() {
   return `${exKey}|${Math.round(T * 10000)}|${Math.round(currentDieV * 10000)}|${Math.round(angleDeg)}`;
 }
 
-// ─── Excel loading ────────────────────────────────────────────────────────────
+// ─── Google Sheets connection ──────────────────────────────────────────────────
+let gsSheetId    = null;
+let gsRefreshTimer = null;
+
+function extractSheetId(url) {
+  const m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return m ? m[1] : null;
+}
+
+// Simple CSV parser — handles quoted fields with commas and escaped quotes
+function parseCSV(text) {
+  const rows = [];
+  // Normalize line endings
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  for (const line of lines) {
+    const row = [];
+    let field = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQ && line[i + 1] === '"') { field += '"'; i++; }
+        else inQ = !inQ;
+      } else if (ch === ',' && !inQ) {
+        row.push(field.trim()); field = '';
+      } else {
+        field += ch;
+      }
+    }
+    row.push(field.trim());
+    rows.push(row);
+  }
+  return rows;
+}
+
+// Parse rows from CSV and populate excelKFactors + empiricalData (same logic as XLSX path)
+function applySheetData(toolRows, logRows) {
+  // K-factors from My Tooling rows 23-27 (0-indexed 22-26)
+  excelKFactors = {};
+  for (let i = 22; i <= 26 && i < toolRows.length; i++) {
+    const row = toolRows[i];
+    const alloy = String(row[1] || '').trim();
+    const k     = parseFloat(row[2]);
+    if (alloy && !isNaN(k)) excelKFactors[alloy] = k;
+  }
+
+  // Test bend log — data from row 6 (index 5)
+  empiricalData = {};
+  let totalBends = 0;
+  for (let i = 5; i < logRows.length; i++) {
+    const row   = logRows[i];
+    const alloy = String(row[1] || '').trim();
+    const thick = parseFloat(row[2]);
+    const vOpen = parseFloat(row[3]);
+    const angle = parseFloat(row[5]);
+    const bd    = parseFloat(row[12]);
+    const k     = parseFloat(row[13]);
+    if (!alloy || isNaN(thick) || isNaN(vOpen) || isNaN(angle) || isNaN(bd)) continue;
+    if (alloy.includes('←') || alloy.toLowerCase().includes('e.g.')) continue;
+    const key = `${alloy}|${Math.round(thick * 10000)}|${Math.round(vOpen * 10000)}|${Math.round(angle)}`;
+    if (!empiricalData[key]) empiricalData[key] = { bds: [], ks: [] };
+    empiricalData[key].bds.push(bd);
+    if (!isNaN(k)) empiricalData[key].ks.push(k);
+    totalBends++;
+  }
+  return { totalBends, combos: Object.keys(empiricalData).length };
+}
+
+function setConnStatus(msg, type) {
+  const el = document.getElementById('conn-sub');
+  el.textContent = msg;
+  el.className = 'conn-sub' + (type === 'ok' ? ' ok' : type === 'err' ? ' err' : '');
+}
+
+function setConnLoaded(totalBends, combos, label) {
+  excelLoaded = true;
+  document.getElementById('conn-bar').classList.add('connected');
+  document.getElementById('conn-bar').classList.remove('error');
+  document.getElementById('eb-stats').style.display   = 'flex';
+  document.getElementById('eb-bend-count').textContent  = totalBends;
+  document.getElementById('eb-combo-count').textContent = combos;
+  setConnStatus(`Connected · ${totalBends} test bend${totalBends !== 1 ? 's' : ''} · ${combos} material/die combos`, 'ok');
+  const now = new Date();
+  document.getElementById('eb-last-sync').textContent =
+    now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  document.getElementById('gs-refresh-btn').style.display = 'inline-flex';
+  updateDieDots();
+  updateKFactor();
+  calc();
+}
+
+async function connectGS(isRefresh) {
+  const url = document.getElementById('gs-url-input').value.trim();
+  if (!url) { setConnStatus('Paste your Google Sheet URL first', 'err'); return; }
+
+  const id = extractSheetId(url);
+  if (!id) { setConnStatus('⚠ That doesn\'t look like a valid Google Sheets URL', 'err'); return; }
+
+  gsSheetId = id;
+  const btn = document.getElementById('gs-connect-btn');
+  btn.textContent = 'Connecting…';
+  btn.disabled = true;
+  if (!isRefresh) setConnStatus('Fetching data from Google Sheets…');
+
+  // Google Sheets gviz CSV endpoint — works for "Anyone with link can view" sheets
+  const base     = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv`;
+  const toolUrl  = `${base}&sheet=My%20Tooling`;
+  const logUrl   = `${base}&sheet=Test%20Bend%20Log`;
+
+  try {
+    const [toolResp, logResp] = await Promise.all([fetch(toolUrl), fetch(logUrl)]);
+    if (!toolResp.ok || !logResp.ok) throw new Error('HTTP ' + (toolResp.status || logResp.status));
+
+    const [toolCSV, logCSV] = await Promise.all([toolResp.text(), logResp.text()]);
+
+    // Sanity check — if we got an HTML error page instead of CSV
+    if (toolCSV.trim().startsWith('<')) throw new Error('Got HTML instead of CSV — check sharing settings');
+
+    const toolRows = parseCSV(toolCSV);
+    const logRows  = parseCSV(logCSV);
+    const { totalBends, combos } = applySheetData(toolRows, logRows);
+
+    setConnLoaded(totalBends, combos, 'Google Sheets');
+
+    // Auto-refresh every 60 seconds
+    if (gsRefreshTimer) clearInterval(gsRefreshTimer);
+    gsRefreshTimer = setInterval(() => connectGS(true), 60000);
+
+  } catch(err) {
+    document.getElementById('conn-bar').classList.add('error');
+    setConnStatus('⚠ Could not connect. Make sure sharing is set to "Anyone with the link can view" — ' + err.message, 'err');
+    console.error(err);
+  }
+
+  btn.textContent = 'Connect';
+  btn.disabled = false;
+}
+
+// ─── Local Excel file fallback ────────────────────────────────────────────────
 function loadExcel(input) {
   const file = input.files[0];
   if (!file) return;
@@ -477,67 +672,18 @@ function loadExcel(input) {
       const data = new Uint8Array(e.target.result);
       const wb   = XLSX.read(data, { type: 'array' });
 
-      // ── 1. My Tooling sheet → K-factors (rows 23-27, cols A=0,B=1,C=2)
       const toolWS   = wb.Sheets['My Tooling'];
       const toolRows = XLSX.utils.sheet_to_json(toolWS, { header: 1, defval: '' });
-      excelKFactors  = {};
-      // Excel rows 23-27 = array indices 22-26
-      for (let i = 22; i <= 26 && i < toolRows.length; i++) {
-        const row = toolRows[i];
-        const alloy = String(row[1] || '').trim();
-        const k     = parseFloat(row[2]);
-        if (alloy && !isNaN(k)) excelKFactors[alloy] = k;
-      }
+      const logWS    = wb.Sheets['Test Bend Log'];
+      const logRows  = XLSX.utils.sheet_to_json(logWS,  { header: 1, defval: '' });
 
-      // ── 2. Test Bend Log sheet → empirical BD data
-      // Layout: A=0:Date B=1:Alloy C=2:Thick D=3:V E=4:Punch F=5:Angle
-      //         G=6:Blank H=7:Leg1 I=8:Leg2 J=9:R K=10:OSSB L=11:BA M=12:BD N=13:K
-      const logWS   = wb.Sheets['Test Bend Log'];
-      const logRows = XLSX.utils.sheet_to_json(logWS, { header: 1, defval: '' });
-      empiricalData  = {};
-      let totalBends = 0;
-
-      // Data starts at Excel row 6 = array index 5
-      for (let i = 5; i < logRows.length; i++) {
-        const row   = logRows[i];
-        const alloy = String(row[1] || '').trim();
-        const thick = parseFloat(row[2]);
-        const vOpen = parseFloat(row[3]);
-        const angle = parseFloat(row[5]);
-        const bd    = parseFloat(row[12]);
-        const k     = parseFloat(row[13]);
-
-        if (!alloy || isNaN(thick) || isNaN(vOpen) || isNaN(angle) || isNaN(bd)) continue;
-        if (alloy === 'e.g. 2/28/2026' || alloy.includes('←')) continue; // skip example row
-
-        const key = `${alloy}|${Math.round(thick * 10000)}|${Math.round(vOpen * 10000)}|${Math.round(angle)}`;
-        if (!empiricalData[key]) empiricalData[key] = { bds: [], ks: [] };
-        empiricalData[key].bds.push(bd);
-        if (!isNaN(k)) empiricalData[key].ks.push(k);
-        totalBends++;
-      }
-
-      const combos = Object.keys(empiricalData).length;
-
-      // Update UI
-      excelLoaded = true;
-      const bar = document.getElementById('excel-bar');
-      bar.classList.add('loaded');
-      document.getElementById('eb-icon').textContent = '✅';
-      document.getElementById('eb-sub').textContent  = `Loaded: ${file.name}`;
-      document.getElementById('eb-sub').className    = 'eb-sub ok';
-      document.getElementById('eb-stats').style.display = 'flex';
-      document.getElementById('eb-bend-count').textContent  = totalBends;
-      document.getElementById('eb-combo-count').textContent = combos;
-      document.getElementById('reload-btn').style.display   = 'inline-flex';
-
-      // Update die buttons with green dots for combos with data
-      updateDieDots();
-      updateKFactor();
-      calc();
+      const { totalBends, combos } = applySheetData(toolRows, logRows);
+      setConnLoaded(totalBends, combos, file.name);
+      // Clear any GS auto-refresh since we're using a static file
+      if (gsRefreshTimer) { clearInterval(gsRefreshTimer); gsRefreshTimer = null; }
 
     } catch(err) {
-      document.getElementById('eb-sub').textContent = '⚠ Error reading file — make sure it\'s the Titan25T_Bend_Reference.xlsx';
+      setConnStatus('⚠ Error reading file — make sure it\'s Titan25T_Bend_Reference.xlsx', 'err');
       console.error(err);
     }
   };
@@ -848,5 +994,18 @@ function resetAll() {
 setMaterial('aluminum');
 calcK();
 </script>
+
+<footer style="margin-top:32px; padding-top:20px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <svg width="20" height="20" viewBox="72 -2 147 148" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M202.831 54.3792C205.244 56.6989 204.583 60.7432 201.46 61.9076C192.33 65.3118 182.432 67.175 172.092 67.175C146.93 67.175 124.382 56.1409 109.155 38.7132C107.535 36.859 107.739 34.0544 109.513 32.3502L141.464 1.64528C143.284 -0.103442 146.137 -0.10344 147.956 1.64528L202.831 54.3792Z" fill="#0DAB4A"/>
+      <path d="M215.489 77.9013C215.489 75.0927 213.101 72.8792 210.359 73.3024C176.783 78.4857 149.657 103.535 141.039 136.237C140.274 139.141 142.51 141.891 145.478 141.891L210.772 141.891C213.377 141.891 215.489 139.752 215.489 137.114L215.489 77.9013Z" fill="#0DAB4A"/>
+      <path d="M121.34 141.891C123.361 141.891 125.171 140.59 125.742 138.626C127.994 130.886 129.203 122.693 129.203 114.214C129.203 87.7109 117.395 64.0012 98.8164 48.1863C97.044 46.6776 94.4464 46.8289 92.7669 48.4429L75.4015 65.1309C74.4631 66.0328 73.9316 67.2854 73.9316 68.5957V137.114C73.9316 139.752 76.0431 141.891 78.6477 141.891H121.34Z" fill="#0DAB4A"/>
+    </svg>
+    <span style="font-size:12px;color:var(--muted);">A <a href="https://www.reframe.systems" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">Reframe Systems</a> internal tool · Titan 25T Microfactory</span>
+  </div>
+  <span style="font-size:11px;color:var(--border);">Bend values are estimates — always verify with test bends before production runs</span>
+</footer>
+
 </body>
 </html>
