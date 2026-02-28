@@ -988,6 +988,11 @@ function resetAll() {
   selectDie(0.630,'Standard 4-Way · Face 1', document.getElementById('die-0630'));
   updateKFactor();
   calcK();
+
+  // Auto-connect to Reframe Systems bend reference sheet
+  const DEFAULT_GS = 'https://docs.google.com/spreadsheets/d/1DK7jcVe8IroCCyOH6Bcm7bIbyBCxTImmxBSk6A1ty3k/edit?usp=sharing';
+  document.getElementById('gs-url-input').value = DEFAULT_GS;
+  connectGS();
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
