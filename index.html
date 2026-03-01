@@ -1,1659 +1,1016 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="DaveScout.IO">
-  <title>DaveScout.IO</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Titan 25T Bend Calculator — Reframe Systems</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --safe-top: env(safe-area-inset-top, 0px);
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --bg: #0f1113; --surface: #181b1e; --surface2: #21252a; --border: #2e3338;
+      --accent: #0dab4a; --accent2: #0a8a3b; --green: #3dbd6e; --yellow: #fbbf24;
+      --red: #f87171; --text: #e8eaed; --muted: #7a8490; --radius: 10px;
+      --navy: #002026;
     }
-    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-    body { overscroll-behavior: none; background: #151D3B; font-family: 'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif; }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; padding: 24px 16px; }
+    .container { max-width: 960px; margin: 0 auto; }
 
-    #header {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      background: #0d1629;
-      padding-top: var(--safe-top);
-      height: calc(62px + var(--safe-top));
-      display: flex; align-items: flex-end;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+    header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .logo-wrap { display: flex; align-items: center; flex-shrink: 0; text-decoration: none; }
+    .logo-icon { height: 64px; width: auto; flex-shrink: 0; }
+    .header-divider { width: 1px; height: 36px; background: var(--border); flex-shrink: 0; }
+    .header-tool { }
+    h1 { font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    h1 span { color: var(--muted); font-weight: 400; font-size: 13px; display: block; margin-top: 3px; font-family: 'Inter', system-ui, sans-serif; letter-spacing: 0; }
+
+    /* Data source connection bar */
+    .conn-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin-bottom: 16px;
     }
-    #header-inner { height: 62px; width: 100%; display: flex; align-items: center; padding: 0 16px; }
+    .conn-bar.connected { border-color: var(--accent); }
+    .conn-bar.error     { border-color: var(--red); }
 
-    #tab-bar {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-      background: #0d1629; border-top: 1px solid rgba(255,255,255,0.08);
-      padding-bottom: var(--safe-bottom);
-      display: flex;
+    .conn-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .conn-icon { font-size: 18px; line-height: 1; }
+    .conn-title { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+    .conn-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px;
+                  background: rgba(13,171,74,0.15); color: var(--accent); border: 1px solid var(--accent);
+                  display: none; }
+    .conn-bar.connected .conn-badge { display: inline; }
+
+    .conn-input-row { display: flex; gap: 8px; align-items: center; }
+    .gs-url-input {
+      flex: 1; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 7px; color: var(--text); font-size: 12px; padding: 9px 12px;
+      outline: none; transition: border-color 0.15s; font-family: 'Inter', monospace;
+      min-width: 0;
     }
-    .tab-btn {
-      flex: 1; display: flex; flex-direction: column; align-items: center;
-      justify-content: center; padding: 10px 0; gap: 3px; cursor: pointer;
-      border: none; background: none;
+    .gs-url-input:focus { border-color: var(--accent); }
+    .gs-url-input::placeholder { color: var(--muted); }
+
+    .load-btn {
+      display: flex; align-items: center; gap: 7px;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 8px;
+      padding: 9px 16px; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: opacity 0.15s; white-space: nowrap; flex-shrink: 0;
     }
-    .tab-btn .tab-icon { font-size: 22px; }
-    .tab-btn .tab-label { font-size: 12px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; }
-    .tab-btn.active .tab-label { color: #EFAB28; }
-    .tab-btn:not(.active) .tab-label { color: rgba(255,255,255,0.35); }
-
-    #main-content {
-      padding-top: calc(62px + var(--safe-top));
-      padding-bottom: calc(72px + var(--safe-bottom));
-      min-height: 100vh;
+    .load-btn:hover { opacity: 0.85; }
+    .load-btn:disabled { opacity: 0.45; cursor: default; }
+    .load-btn.secondary {
+      background: var(--surface2); color: var(--muted);
+      border: 1px solid var(--border); font-size: 12px; padding: 9px 12px;
     }
-    #main-content.no-tabbar {
-      padding-bottom: 16px;
+    .load-btn.secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    .conn-status { display: flex; align-items: center; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
+    .conn-sub { font-size: 11px; color: var(--muted); flex: 1; }
+    .conn-sub.ok  { color: var(--accent); }
+    .conn-sub.err { color: var(--red); }
+    .eb-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+    .eb-stat { text-align: center; }
+    .eb-stat-val { font-size: 18px; font-weight: 700; font-family: 'Consolas', monospace; color: var(--green); }
+    .eb-stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .conn-divider { display: flex; align-items: center; gap: 10px; margin: 12px 0 10px; }
+    .conn-divider::before, .conn-divider::after { content:''; flex:1; height:1px; background: var(--border); }
+    .conn-divider span { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
+
+    #file-input { display: none; }
+
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+    .card h2 { font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 16px; }
+
+    .field { margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    label { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    .badge { font-size: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; color: var(--accent); }
+    .badge.from-excel { color: var(--green); border-color: var(--green); background: rgba(52,211,153,0.1); }
+
+    .input-row { display: flex; gap: 8px; align-items: center; }
+    input[type="number"] { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; color: var(--text); font-size: 14px; padding: 9px 12px; outline: none; transition: border-color 0.15s; font-family: 'Consolas', monospace; }
+    input[type="number"]:focus { border-color: var(--accent); }
+    .unit { color: var(--muted); font-size: 12px; white-space: nowrap; min-width: 28px; }
+
+    .mtabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .mtab { flex: 1; padding: 9px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 13px; cursor: pointer; transition: all 0.15s; font-weight: 500; }
+    .mtab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    .die-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .die-btn { padding: 10px 8px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--text); cursor: pointer; transition: all 0.15s; text-align: left; position: relative; }
+    .die-btn:hover { border-color: var(--accent); }
+    .die-btn.active { border-color: var(--accent); background: rgba(13,171,74,0.12); }
+    .die-btn.acute-active { border-color: var(--accent2); background: rgba(0,97,41,0.15); }
+    .die-btn.has-data { border-color: var(--green) !important; }
+    .die-name { font-size: 12px; font-weight: 600; }
+    .die-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .die-r    { font-size: 11px; color: var(--green); margin-top: 1px; }
+    .die-dot  { position: absolute; top: 6px; right: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--green); display: none; }
+    .die-btn.has-data .die-dot { display: block; }
+
+    .punch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .punch-btn { padding: 10px 8px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--text); cursor: pointer; transition: all 0.15s; text-align: left; }
+    .punch-btn.active { border-color: var(--yellow); background: rgba(251,191,36,0.08); }
+    .punch-name { font-size: 12px; font-weight: 600; }
+    .punch-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    select { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; color: var(--text); font-size: 14px; padding: 9px 12px; outline: none; }
+    select:focus { border-color: var(--accent); }
+
+    .results-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    @media (max-width: 640px) { .results-grid { grid-template-columns: 1fr 1fr; } }
+    .result-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+    .result-card.highlight  { border-color: var(--accent); background: rgba(13,171,74,0.08); }
+    .result-card.empirical  { border-color: var(--green);  background: rgba(52,211,153,0.08); }
+    .result-card.no-data    { border-color: var(--border); opacity: 0.5; }
+    .result-card.warn-card  { border-color: var(--yellow); background: rgba(251,191,36,0.08); }
+    .result-card.ok-card    { border-color: var(--green);  background: rgba(52,211,153,0.07); }
+    .result-card.err-card   { border-color: var(--red);    background: rgba(248,113,113,0.08); }
+    .rlabel { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .rvalue { font-size: 20px; font-weight: 700; font-family: 'Consolas', monospace; }
+    .runit  { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 3px; }
+    .rsub   { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+
+    /* Comparison row */
+    .compare-row {
+      display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px;
+      align-items: center; margin-top: 10px;
     }
+    .compare-side { text-align: center; }
+    .compare-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 4px; }
+    .compare-val { font-size: 22px; font-weight: 700; font-family: 'Consolas', monospace; }
+    .compare-val.theoretical { color: var(--muted); }
+    .compare-val.empirical   { color: var(--green); }
+    .compare-val.no-emp      { color: var(--border); font-size: 14px; }
+    .compare-arrow { color: var(--muted); font-size: 18px; }
+    .compare-delta { font-size: 11px; margin-top: 4px; }
 
-    .card {
-      background: #1e3a70;
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.35);
-      border: 1px solid rgba(255,255,255,0.07);
+    .divider { height: 1px; background: var(--border); margin: 20px 0; }
+    .full { grid-column: 1 / -1; }
+
+    .tonnage-bar-wrap { margin-top: 10px; }
+    .tonnage-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+    .tonnage-track { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; border: 1px solid var(--border); }
+    .tonnage-fill  { height: 100%; border-radius: 4px; transition: width 0.3s, background 0.3s; }
+
+    .info-box { background: rgba(13,171,74,0.07); border: 1px solid rgba(13,171,74,0.2); border-radius: 7px; padding: 10px 12px; font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.6; }
+    .info-box strong { color: var(--accent); }
+    .info-box.green-box { background: rgba(52,211,153,0.07); border-color: rgba(52,211,153,0.25); }
+    .info-box.green-box strong { color: var(--green); }
+
+    .reset-btn { background: none; border: 1px solid var(--border); border-radius: 7px; color: var(--muted); padding: 7px 16px; font-size: 12px; cursor: pointer; margin-top: 14px; transition: all 0.15s; }
+    .reset-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 8px; }
+
+    .use-empirical-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(52,211,153,0.15); border: 1px solid var(--green);
+      border-radius: 5px; color: var(--green); font-size: 11px;
+      padding: 3px 9px; cursor: pointer; margin-top: 6px; transition: all 0.15s;
     }
-
-    .btn-primary {
-      background: #EFAB28; color: #151D3B; border-radius: 12px;
-      padding: 16px 20px; font-size: 16px; font-weight: 800;
-      border: none; cursor: pointer; width: 100%; display: block;
-      transition: background 0.15s; font-family: 'Plus Jakarta Sans', sans-serif;
-      letter-spacing: 0.02em; text-transform: uppercase;
-    }
-    .btn-primary:active { background: #d4941f; }
-    .btn-secondary {
-      background: transparent; color: #EFAB28; border-radius: 12px;
-      padding: 14px 20px; font-size: 16px; font-weight: 700;
-      border: 2px solid #EFAB28; cursor: pointer; width: 100%;
-      display: block; transition: all 0.15s;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      letter-spacing: 0.02em; text-transform: uppercase;
-    }
-    .btn-secondary:active { background: rgba(239,171,40,0.15); }
-    .btn-danger {
-      background: transparent; color: #f87171; border-radius: 12px;
-      padding: 14px 20px; font-size: 16px; font-weight: 700;
-      border: 2px solid rgba(248,113,113,0.5); cursor: pointer; width: 100%; display: block;
-      font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: 0.02em; text-transform: uppercase;
-    }
-
-    .form-input {
-      width: 100%; padding: 14px 15px; border-radius: 10px;
-      border: 1.5px solid rgba(255,255,255,0.15); font-size: 16px; color: #F4F4EE;
-      background: rgba(0,0,0,0.3); -webkit-appearance: none;
-      transition: border-color 0.15s; font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-    .form-input::placeholder { color: rgba(244,244,238,0.35); }
-    .form-input:focus { outline: none; border-color: #EFAB28; box-shadow: 0 0 0 3px rgba(239,171,40,0.2); }
-    textarea.form-input { resize: none; line-height: 1.5; }
-
-    /* Team grid */
-    .teams-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-      gap: 10px;
-    }
-    .team-card {
-      border-radius: 16px; cursor: pointer; overflow: hidden;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 12px 6px 10px; text-align: center; min-height: 96px;
-      transition: transform 0.12s, box-shadow 0.12s;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
-      position: relative;
-    }
-    .team-card:active { transform: scale(0.95); box-shadow: 0 1px 6px rgba(0,0,0,0.2); }
-    .team-card-num {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      font-weight: 700; font-size: 22px; line-height: 1;
-      letter-spacing: 0.5px;
-    }
-    .team-card-name {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      font-size: 10px; font-weight: 600; margin-top: 4px;
-      width: 100%; padding: 0 8px; opacity: 0.85; box-sizing: border-box;
-      line-height: 1.2; text-transform: uppercase; letter-spacing: 0.03em;
-      text-align: center; word-break: normal; overflow-wrap: normal;
-    }
-    .team-card-stars {
-      font-size: 9px; margin-top: 4px; letter-spacing: 1px;
-    }
-
-    .robot-photo { width: 100%; object-fit: cover; border-radius: 12px; display: none; }
-    .photo-placeholder {
-      width: 100%; border-radius: 12px;
-      background: rgba(0,0,0,0.3);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      cursor: pointer; border: 2px dashed rgba(239,171,40,0.5); gap: 8px;
-      min-height: 160px;
-    }
-    .photo-placeholder:active { background: rgba(0,0,0,0.45); }
-
-    .star-row { display: flex; gap: 6px; justify-content: center; }
-    .star-btn { font-size: 36px; cursor: pointer; padding: 4px; user-select: none; -webkit-user-select: none; border: none; background: none; }
-
-    .stat-box { background: rgba(0,0,0,0.25); border-radius: 12px; padding: 12px; text-align: center; flex: 1; }
-    .stat-label { font-size: 13px; color: rgba(244,244,238,0.55); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-    .stat-value { font-size: 26px; font-weight: 800; color: #F4F4EE; margin-top: 2px; }
-
-    /* Toggle switch */
-    .toggle-wrap { display: flex; align-items: center; justify-content: space-between; }
-    .toggle-switch { position: relative; width: 51px; height: 31px; flex-shrink: 0; }
-    .toggle-switch input { opacity: 0; width: 0; height: 0; }
-    .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.2); border-radius: 31px; transition: 0.25s; }
-    .toggle-slider:before { position: absolute; content: ""; height: 25px; width: 25px; left: 3px; bottom: 3px; background: #F4F4EE; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.4); transition: 0.25s; }
-    input:checked + .toggle-slider { background: #EFAB28; }
-    input:checked + .toggle-slider:before { transform: translateX(20px); }
-
-    /* Select */
-    select.form-input { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23F4F4EE' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 12px center; background-repeat: no-repeat; background-size: 20px; padding-right: 40px; -webkit-appearance: none; }
-    select.form-input option { background: #1e3a70; color: #F4F4EE; }
-
-    /* Modal */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: flex; align-items: flex-end; }
-    .modal-sheet { background: #1e3a70; border-radius: 24px 24px 0 0; width: 100%; padding: 24px 20px; padding-bottom: calc(24px + var(--safe-bottom)); border-top: 1px solid rgba(255,255,255,0.1); }
-    .modal-handle { width: 36px; height: 4px; background: rgba(255,255,255,0.25); border-radius: 2px; margin: 0 auto 20px; }
-
-    /* Section header */
-    .section-label { font-size: 15px; font-weight: 700; color: #EFAB28; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; font-family: 'Plus Jakarta Sans', sans-serif; }
-
-    /* View padding wrapper — increases on iPad */
-    .view-pad { padding: 14px 16px 28px; }
-    @media (min-width: 768px) { .view-pad { padding: 20px 24px 36px; } }
-
-    /* Detail view header elements */
-    .detail-back-label { font-size: 15px; font-weight: 600; }
-    .detail-back-icon { width: 22px; height: 22px; }
-    .detail-title-text { font-size: 24px; font-weight: 700; letter-spacing: 0.03em; font-family: 'Plus Jakarta Sans', sans-serif; }
-    @media (min-width: 768px) {
-      .detail-back-label { font-size: 20px; }
-      .detail-back-icon { width: 28px; height: 28px; }
-      .detail-title-text { font-size: 30px; }
-    }
-
-    .field-chip { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.25); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
-
-    .ranking-badge { display: inline-flex; align-items: center; justify-content: center; background: rgba(68,108,227,0.3); color: #93c5fd; font-weight: 800; font-size: 20px; padding: 6px 16px; border-radius: 10px; }
-
-    /* ── iPad / tablet layout (768px+) ── */
-    @media (min-width: 768px) {
-      /* Header — taller with centred inner */
-      #header { height: calc(76px + var(--safe-top)); }
-      #header-inner {
-        height: 76px; padding: 0 28px;
-        max-width: 1040px; margin: 0 auto; width: 100%;
-      }
-
-      /* Tab bar — bigger tap targets */
-      .tab-btn { padding: 13px 0 10px; gap: 5px; }
-      .tab-btn .tab-icon { font-size: 26px; }
-      .tab-btn .tab-label { font-size: 13px; letter-spacing: 0.04em; }
-      #tab-bar { padding-bottom: calc(var(--safe-bottom) + 2px); }
-
-      /* Main content — taller offsets + centred on landscape */
-      #main-content {
-        padding-top: calc(76px + var(--safe-top));
-        padding-bottom: calc(90px + var(--safe-bottom));
-        max-width: 1040px; margin-left: auto; margin-right: auto;
-      }
-
-      /* Teams grid — bigger cards, more breathing room */
-      .teams-grid {
-        grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
-        gap: 13px;
-      }
-      .team-card { min-height: 116px; padding: 14px 8px 12px; border-radius: 18px; }
-      .team-card-num { font-size: 26px; }
-      .team-card-name { font-size: 11px; margin-top: 5px; }
-      .team-card-stars { font-size: 11px; margin-top: 5px; }
-
-      /* Cards */
-      .card { border-radius: 20px; }
-
-      /* Buttons */
-      .btn-primary { padding: 18px 24px; font-size: 17px; border-radius: 14px; }
-      .btn-secondary { padding: 16px 24px; font-size: 17px; border-radius: 14px; }
-      .btn-danger { padding: 16px 24px; font-size: 17px; border-radius: 14px; }
-
-      /* Form inputs */
-      .form-input { padding: 16px 18px; font-size: 17px; }
-
-      /* Stat boxes */
-      .stat-box { padding: 16px; }
-      .stat-label { font-size: 14px; }
-      .stat-value { font-size: 30px; }
-
-      /* Section labels */
-      .section-label { font-size: 16px; }
-
-      /* Modal sheet — centred on wide screens */
-      .modal-overlay { align-items: center; }
-      .modal-sheet {
-        border-radius: 24px; width: min(560px, 94vw);
-        margin: 0 auto; padding-bottom: 28px;
-      }
-    }
+    .use-empirical-btn:hover { background: rgba(52,211,153,0.25); }
   </style>
 </head>
 <body>
+<div class="container">
 
-<div id="header">
-  <div id="header-inner">
-    <!-- Rendered by JS -->
+  <header>
+    <a class="logo-wrap" href="https://www.reframe.systems" target="_blank">
+      <!-- Reframe Systems full logo (official SVG, text recolored for dark bg) -->
+      <svg class="logo-icon" viewBox="0 0 290 284" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Icon: 3-path organic house -->
+        <path d="M202.831 54.3792C205.244 56.6989 204.583 60.7432 201.46 61.9076C192.33 65.3118 182.432 67.175 172.092 67.175C146.93 67.175 124.382 56.1409 109.155 38.7132C107.535 36.859 107.739 34.0544 109.513 32.3502L141.464 1.64528C143.284 -0.103442 146.137 -0.10344 147.956 1.64528L202.831 54.3792Z" fill="#0DAB4A"/>
+        <path d="M215.489 77.9013C215.489 75.0927 213.101 72.8792 210.359 73.3024C176.783 78.4857 149.657 103.535 141.039 136.237C140.274 139.141 142.51 141.891 145.478 141.891L210.772 141.891C213.377 141.891 215.489 139.752 215.489 137.114L215.489 77.9013Z" fill="#0DAB4A"/>
+        <path d="M121.34 141.891C123.361 141.891 125.171 140.59 125.742 138.626C127.994 130.886 129.203 122.693 129.203 114.214C129.203 87.7109 117.395 64.0012 98.8164 48.1863C97.044 46.6776 94.4464 46.8289 92.7669 48.4429L75.4015 65.1309C74.4631 66.0328 73.9316 67.2854 73.9316 68.5957V137.114C73.9316 139.752 76.0431 141.891 78.6477 141.891H121.34Z" fill="#0DAB4A"/>
+        <!-- Wordmark: "Reframe" -->
+        <path d="M270.308 226.957C266.017 226.957 262.314 226.063 259.198 224.275C256.082 222.461 253.681 219.907 251.995 216.612C250.335 213.318 249.505 209.435 249.505 204.966C249.505 200.547 250.335 196.678 251.995 193.357C253.655 190.011 255.992 187.406 259.006 185.542C262.02 183.677 265.57 182.745 269.657 182.745C272.288 182.745 274.778 183.166 277.128 184.009C279.503 184.852 281.597 186.155 283.411 187.917C285.25 189.679 286.693 191.927 287.74 194.66C288.787 197.367 289.311 200.598 289.311 204.353V207.494H254.217V200.713H284.292L279.58 202.705C279.58 200.279 279.209 198.172 278.468 196.384C277.728 194.571 276.63 193.153 275.174 192.131C273.718 191.11 271.904 190.599 269.733 190.599C267.562 190.599 265.711 191.11 264.178 192.131C262.646 193.153 261.484 194.532 260.692 196.269C259.9 197.98 259.504 199.896 259.504 202.016V206.728C259.504 209.333 259.951 211.568 260.845 213.433C261.765 215.272 263.042 216.676 264.676 217.647C266.336 218.617 268.265 219.103 270.461 219.103C271.892 219.103 273.194 218.898 274.369 218.49C275.57 218.081 276.591 217.468 277.434 216.651C278.302 215.808 278.967 214.774 279.426 213.548L288.851 214.659C288.238 217.136 287.101 219.307 285.441 221.172C283.807 223.011 281.699 224.441 279.12 225.462C276.566 226.459 273.628 226.957 270.308 226.957Z" fill="#e8eaed"/>
+        <path d="M184.47 226.114V183.281H194.086V190.599H194.622C195.516 188.147 196.998 186.231 199.066 184.852C201.135 183.447 203.587 182.745 206.422 182.745C209.334 182.745 211.786 183.447 213.778 184.852C215.77 186.257 217.162 188.172 217.954 190.599H218.414C219.384 188.224 220.993 186.321 223.241 184.89C225.489 183.46 228.171 182.745 231.287 182.745C235.22 182.745 238.425 183.997 240.903 186.5C243.406 188.977 244.657 192.604 244.657 197.38V226.114H234.543V198.912C234.543 196.282 233.828 194.353 232.398 193.127C230.993 191.876 229.269 191.25 227.225 191.25C224.799 191.25 222.909 192.016 221.555 193.549C220.202 195.056 219.525 196.997 219.525 199.372V226.114H209.564V198.529C209.564 196.307 208.913 194.545 207.61 193.242C206.307 191.914 204.583 191.25 202.438 191.25C200.982 191.25 199.654 191.621 198.453 192.361C197.253 193.102 196.295 194.136 195.58 195.464C194.89 196.793 194.546 198.325 194.546 200.062V226.114H184.47Z" fill="#e8eaed"/>
+        <path d="M155.218 226.995C152.486 226.995 150.034 226.51 147.863 225.539C145.692 224.543 143.98 223.087 142.729 221.172C141.477 219.256 140.852 216.893 140.852 214.084C140.852 211.683 141.299 209.691 142.192 208.107C143.086 206.524 144.3 205.259 145.832 204.314C147.39 203.369 149.14 202.654 151.081 202.169C153.022 201.658 155.027 201.301 157.096 201.096C159.624 200.815 161.668 200.573 163.226 200.368C164.784 200.164 165.907 199.832 166.597 199.372C167.312 198.912 167.67 198.197 167.67 197.227V197.035C167.67 194.966 167.057 193.357 165.831 192.208C164.605 191.059 162.817 190.484 160.467 190.484C157.99 190.484 156.023 191.02 154.567 192.093C153.137 193.166 152.166 194.43 151.655 195.886L142.269 194.545C143.01 191.94 144.236 189.769 145.947 188.032C147.658 186.27 149.74 184.954 152.192 184.086C154.669 183.192 157.402 182.745 160.39 182.745C162.434 182.745 164.477 182.988 166.52 183.473C168.564 183.933 170.441 184.724 172.152 185.848C173.863 186.972 175.23 188.479 176.252 190.369C177.273 192.259 177.784 194.622 177.784 197.457V226.114H168.091V220.214H167.785C167.172 221.389 166.303 222.5 165.179 223.547C164.081 224.569 162.702 225.399 161.042 226.037C159.407 226.676 157.466 226.995 155.218 226.995ZM157.785 219.562C159.829 219.562 161.591 219.167 163.072 218.375C164.554 217.557 165.703 216.485 166.52 215.157C167.338 213.803 167.746 212.334 167.746 210.751V205.732C167.414 205.987 166.878 206.23 166.137 206.46C165.397 206.664 164.554 206.856 163.609 207.035C162.664 207.213 161.731 207.367 160.812 207.494C159.918 207.622 159.139 207.724 158.475 207.801C156.968 208.005 155.614 208.35 154.414 208.835C153.239 209.295 152.307 209.933 151.617 210.751C150.928 211.568 150.583 212.628 150.583 213.931C150.583 215.795 151.26 217.2 152.613 218.145C153.967 219.09 155.691 219.562 157.785 219.562Z" fill="#e8eaed"/>
+        <path d="M116.312 226.113V183.281H126.082V190.483H126.542C127.308 187.98 128.649 186.065 130.564 184.737C132.48 183.383 134.664 182.706 137.116 182.706C137.652 182.706 138.265 182.732 138.955 182.783C139.67 182.834 140.257 182.898 140.717 182.974V192.246C140.283 192.092 139.606 191.965 138.686 191.863C137.767 191.76 136.886 191.709 136.043 191.709C134.178 191.709 132.518 192.105 131.062 192.897C129.607 193.689 128.457 194.774 127.614 196.153C126.797 197.533 126.388 199.142 126.388 200.981V226.113H116.312Z" fill="#e8eaed"/>
+        <path d="M112.039 183.281V191.097H86.792V183.281H112.039ZM93.0751 226.114V179.259C93.0751 176.372 93.6753 173.972 94.8757 172.056C96.0762 170.14 97.6853 168.71 99.703 167.765C101.746 166.82 103.994 166.348 106.446 166.348C108.208 166.348 109.766 166.488 111.12 166.769C112.499 167.05 113.508 167.305 114.146 167.535L112.078 175.351C111.669 175.198 111.145 175.057 110.507 174.929C109.868 174.776 109.14 174.699 108.323 174.699C106.459 174.699 105.118 175.159 104.3 176.079C103.509 176.998 103.113 178.301 103.113 179.986V226.114H93.0751Z" fill="#e8eaed"/>
+        <path d="M66.5815 226.957C62.2906 226.957 58.5872 226.063 55.4712 224.275C52.3551 222.461 49.9543 219.907 48.2686 216.612C46.6084 213.318 45.7783 209.435 45.7783 204.966C45.7783 200.547 46.6084 196.678 48.2686 193.357C49.9287 190.011 52.2658 187.406 55.2796 185.542C58.2934 183.677 61.8437 182.745 65.9302 182.745C68.561 182.745 71.0512 183.166 73.401 184.009C75.7763 184.852 77.8707 186.155 79.6841 187.917C81.5231 189.679 82.9661 191.927 84.0133 194.66C85.0605 197.367 85.5841 200.598 85.5841 204.353V207.494H50.4906V200.713H80.5653L75.8529 202.705C75.8529 200.279 75.4826 198.172 74.7419 196.384C74.0012 194.571 72.9029 193.153 71.4471 192.131C69.9913 191.11 68.1778 190.599 66.0068 190.599C63.8359 190.599 61.9841 191.11 60.4517 192.131C58.9192 193.153 57.7571 194.532 56.9653 196.269C56.1735 197.98 55.7777 199.896 55.7777 202.016V206.728C55.7777 209.333 56.2246 211.568 57.1186 213.433C58.038 215.272 59.3151 216.676 60.9497 217.647C62.6099 218.617 64.5382 219.103 66.7348 219.103C68.1651 219.103 69.4677 218.898 70.6426 218.49C71.843 218.081 72.8646 217.468 73.7075 216.651C74.5759 215.808 75.2399 214.774 75.6997 213.548L85.1243 214.659C84.5114 217.136 83.3748 219.307 81.7146 221.172C80.08 223.011 77.9728 224.441 75.3932 225.462C72.8391 226.459 69.9019 226.957 66.5815 226.957Z" fill="#e8eaed"/>
+        <path d="M1.31738 226.114V169.03H22.7336C27.1266 169.03 30.8046 169.796 33.7673 171.328C36.7556 172.861 39.016 175.006 40.5485 177.765C42.0809 180.498 42.8472 183.678 42.8472 187.304C42.8472 190.957 42.0682 194.124 40.5102 196.806C38.9777 199.488 36.7045 201.556 33.6907 203.012C30.6768 204.468 26.9734 205.196 22.5803 205.196H7.37062V196.652H21.1628C23.7424 196.652 25.8496 196.295 27.4842 195.58C29.1444 194.865 30.3576 193.817 31.1238 192.438C31.9156 191.033 32.3115 189.322 32.3115 187.304C32.3115 185.287 31.9156 183.563 31.1238 182.132C30.332 180.677 29.1188 179.578 27.4842 178.838C25.8496 178.071 23.7297 177.688 21.1245 177.688H11.6615V226.114H1.31738ZM33.3842 226.114L19.5537 200.215H30.8173L44.9543 226.114H33.3842Z" fill="#e8eaed"/>
+        <!-- Wordmark: "Systems" -->
+        <path d="M278.847 268.634C277.035 268.634 275.466 268.345 274.141 267.767C272.815 267.178 271.773 266.363 271.015 265.321C270.267 264.267 269.842 263.05 269.74 261.668H272.9C272.991 262.619 273.314 263.406 273.869 264.029C274.435 264.652 275.155 265.117 276.027 265.423C276.899 265.728 277.839 265.881 278.847 265.881C280.014 265.881 281.061 265.689 281.99 265.304C282.93 264.919 283.672 264.381 284.216 263.69C284.76 262.999 285.032 262.189 285.032 261.26C285.032 260.422 284.794 259.742 284.318 259.221C283.842 258.7 283.219 258.275 282.449 257.947C281.69 257.618 280.863 257.33 279.968 257.08L276.876 256.197C274.894 255.631 273.325 254.821 272.17 253.767C271.026 252.703 270.454 251.315 270.454 249.605C270.454 248.189 270.833 246.954 271.592 245.901C272.362 244.836 273.399 244.009 274.701 243.42C276.015 242.831 277.477 242.537 279.085 242.537C280.716 242.537 282.166 242.831 283.434 243.42C284.703 243.998 285.711 244.791 286.459 245.799C287.206 246.796 287.603 247.928 287.648 249.197H284.658C284.511 247.951 283.91 246.982 282.857 246.291C281.815 245.601 280.523 245.255 278.983 245.255C277.873 245.255 276.899 245.436 276.061 245.799C275.222 246.161 274.571 246.66 274.107 247.294C273.642 247.928 273.41 248.653 273.41 249.469C273.41 250.364 273.688 251.088 274.243 251.643C274.798 252.187 275.455 252.612 276.214 252.918C276.984 253.224 277.68 253.467 278.303 253.648L280.852 254.362C281.509 254.543 282.239 254.787 283.044 255.093C283.859 255.398 284.641 255.812 285.388 256.333C286.147 256.854 286.77 257.522 287.257 258.338C287.744 259.142 287.988 260.139 287.988 261.328C287.988 262.687 287.631 263.922 286.918 265.032C286.204 266.131 285.168 267.008 283.808 267.665C282.449 268.311 280.795 268.634 278.847 268.634Z" fill="#7a8490"/>
+        <path d="M218.401 242.876H222.071L230.668 263.877H230.974L239.571 242.876H243.36V268.192H240.353V248.959H240.115L232.147 268.192H229.394L221.528 248.959H221.29V268.192H218.401V242.876Z" fill="#7a8490"/>
+        <path d="M176.271 268.192V242.876H191.562V245.595H179.329V254.056H190.746V256.775H179.329V265.474H191.732V268.192H176.271Z" fill="#7a8490"/>
+        <path d="M131.218 245.595V242.876H150.213V245.595H142.262V268.192H139.203V245.595H131.218Z" fill="#7a8490"/>
+        <path d="M97.1059 268.634C95.2936 268.634 93.7248 268.345 92.3995 267.767C91.0743 267.178 90.0322 266.363 89.2733 265.321C88.5257 264.267 88.101 263.05 87.999 261.668H91.1592C91.2499 262.619 91.5727 263.406 92.1277 264.029C92.694 264.652 93.4133 265.117 94.2855 265.423C95.1576 265.728 96.0978 265.881 97.1059 265.881C98.2725 265.881 99.3203 265.689 100.249 265.304C101.189 264.919 101.931 264.381 102.475 263.69C103.019 262.999 103.29 262.189 103.29 261.26C103.29 260.422 103.052 259.742 102.577 259.221C102.101 258.7 101.478 258.275 100.708 257.947C99.9489 257.618 99.122 257.33 98.2272 257.08L95.135 256.197C93.1528 255.631 91.584 254.821 90.4286 253.767C89.2846 252.703 88.7126 251.315 88.7126 249.605C88.7126 248.189 89.0921 246.954 89.851 245.901C90.6212 244.836 91.6576 244.009 92.9602 243.42C94.2741 242.831 95.7353 242.537 97.3437 242.537C98.9748 242.537 100.425 242.831 101.693 243.42C102.962 243.998 103.97 244.791 104.718 245.799C105.465 246.796 105.862 247.928 105.907 249.197H102.917C102.769 247.951 102.169 246.982 101.116 246.291C100.074 245.601 98.7822 245.255 97.2418 245.255C96.1317 245.255 95.1576 245.436 94.3194 245.799C93.4812 246.161 92.83 246.66 92.3656 247.294C91.9011 247.928 91.6689 248.653 91.6689 249.469C91.6689 250.364 91.9464 251.088 92.5015 251.643C93.0565 252.187 93.7135 252.612 94.4724 252.918C95.2426 253.224 95.9392 253.467 96.5622 253.648L99.1107 254.362C99.7677 254.543 100.498 254.787 101.302 255.093C102.118 255.398 102.9 255.812 103.647 256.333C104.406 256.854 105.029 257.522 105.516 258.338C106.003 259.142 106.247 260.139 106.247 261.328C106.247 262.687 105.89 263.922 105.176 265.032C104.463 266.131 103.426 267.008 102.067 267.665C100.708 268.311 99.0541 268.634 97.1059 268.634Z" fill="#7a8490"/>
+        <path d="M42.4365 242.876H45.9365L52.9706 254.702H53.2764L60.2764 242.876H63.8104L54.6356 257.76V268.192H51.5773V257.76L42.4365 242.876Z" fill="#7a8490"/>
+        <path d="M9.10684 268.634C7.29453 268.634 5.72576 268.345 4.40051 267.767C3.07526 267.178 2.03318 266.363 1.27428 265.321C0.526702 264.267 0.101942 263.05 0 261.668H3.16021C3.25083 262.619 3.57364 263.406 4.12866 264.029C4.69501 264.652 5.41427 265.117 6.28644 265.423C7.15861 265.728 8.09874 265.881 9.10684 265.881C10.2735 265.881 11.3213 265.689 12.2501 265.304C13.1902 264.919 13.9321 264.381 14.4758 263.69C15.0195 262.999 15.2913 262.189 15.2913 261.26C15.2913 260.422 15.0535 259.742 14.5777 259.221C14.102 258.7 13.479 258.275 12.7088 257.947C11.9499 257.618 11.123 257.33 10.2282 257.08L7.13596 256.197C5.15375 255.631 3.58497 254.821 2.42962 253.767C1.2856 252.703 0.713596 251.315 0.713596 249.605C0.713596 248.189 1.09305 246.954 1.85195 245.901C2.62218 244.836 3.65859 244.009 4.96119 243.42C6.27511 242.831 7.73628 242.537 9.34471 242.537C10.9758 242.537 12.4256 242.831 13.6942 243.42C14.9629 243.998 15.971 244.791 16.7185 245.799C17.4661 246.796 17.8625 247.928 17.9079 249.197H14.9175C14.7703 247.951 14.17 246.982 13.1166 246.291C12.0745 245.601 10.7832 245.255 9.24276 245.255C8.13273 245.255 7.15861 245.436 6.32042 245.799C5.48223 246.161 4.83093 246.66 4.36653 247.294C3.90212 247.928 3.66992 248.653 3.66992 249.469C3.66992 250.364 3.94743 251.088 4.50245 251.643C5.05747 252.187 5.71443 252.612 6.47333 252.918C7.24356 253.224 7.94017 253.467 8.56315 253.648L11.1117 254.362C11.7687 254.543 12.4993 254.787 13.3035 255.093C14.119 255.398 14.9006 255.812 15.6481 256.333C16.407 256.854 17.03 257.522 17.5171 258.338C18.0041 259.142 18.2477 260.139 18.2477 261.328C18.2477 262.687 17.8909 263.922 17.1773 265.032C16.4637 266.131 15.4273 267.008 14.068 267.665C12.7088 268.311 11.0551 268.634 9.10684 268.634Z" fill="#7a8490"/>
+      </svg>
+    </a>
+    <div class="header-divider"></div>
+    <div class="header-tool">
+      <h1>Titan 25T — Bend Calculator
+        <span>Bend Deduction · Flat Length · Tonnage Check · Live Excel Reference</span>
+      </h1>
+    </div>
+  </header>
+
+  <!-- Data source connection bar -->
+  <div class="conn-bar" id="conn-bar">
+    <div class="conn-header">
+      <span class="conn-icon">🔗</span>
+      <span class="conn-title">Live Google Sheets Connection</span>
+      <span class="conn-badge">● LIVE</span>
+    </div>
+    <div class="conn-input-row">
+      <input class="gs-url-input" id="gs-url-input" type="url"
+        placeholder="Paste your Google Sheet URL here…"
+        onkeydown="if(event.key==='Enter')connectGS()" />
+      <button class="load-btn" id="gs-connect-btn" onclick="connectGS()">Connect</button>
+      <button class="load-btn secondary" id="gs-refresh-btn" style="display:none" onclick="connectGS(true)" title="Re-fetch latest data">↺ Sync</button>
+    </div>
+    <div class="conn-status">
+      <span class="conn-sub" id="conn-sub">Paste your sheet URL above — sheet must be shared "Anyone with the link can view"</span>
+      <div class="eb-stats" id="eb-stats" style="display:none">
+        <div class="eb-stat"><div class="eb-stat-val" id="eb-bend-count">0</div><div class="eb-stat-lbl">Test Bends</div></div>
+        <div class="eb-stat"><div class="eb-stat-val" id="eb-combo-count">0</div><div class="eb-stat-lbl">Combos Tested</div></div>
+        <div class="eb-stat"><div class="eb-stat-val" id="eb-last-sync">—</div><div class="eb-stat-lbl">Last Sync</div></div>
+      </div>
+    </div>
+    <div class="conn-divider"><span>or upload local Excel file</span></div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="file" id="file-input" accept=".xlsx" onchange="loadExcel(this)" />
+      <button class="load-btn secondary" onclick="document.getElementById('file-input').click()">📂 Load Excel File</button>
+      <span style="font-size:11px;color:var(--muted);">Works offline — no live sync</span>
+    </div>
   </div>
-</div>
 
-<div id="main-content">
-  <!-- Rendered by JS -->
-</div>
+  <div class="grid2">
 
-<div id="tab-bar">
-  <!-- Rendered by JS -->
-</div>
+    <!-- LEFT: Inputs -->
+    <div class="card">
+      <h2>Material</h2>
+      <div class="mtabs">
+        <button class="mtab active" id="btn-al" onclick="setMaterial('aluminum')">Aluminum</button>
+        <button class="mtab" id="btn-ms" onclick="setMaterial('mild_steel')">Mild Steel</button>
+      </div>
+      <div class="field">
+        <label>Alloy / Grade</label>
+        <select id="alloy" onchange="updateKFactor()"></select>
+      </div>
+      <div class="field">
+        <label>Material Thickness <span class="badge" id="gauge-badge"></span></label>
+        <div class="input-row">
+          <input type="number" id="thickness" value="0.125" min="0.01" step="0.001" oninput="onThicknessChange()" />
+          <span class="unit">in</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Bend Angle (included)</label>
+        <div class="input-row">
+          <input type="number" id="angle" value="90" min="1" max="179" step="1" oninput="calc()" />
+          <span class="unit">°</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Part Bend Length <span style="font-size:11px;color:var(--muted)">(tonnage check)</span></label>
+        <div class="input-row">
+          <input type="number" id="partlen" value="12" min="0.5" step="0.5" oninput="calc()" />
+          <span class="unit">in</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>K-Factor <span class="badge" id="k-source-badge">default</span></label>
+        <div class="input-row">
+          <input type="number" id="kfactor" value="0.38" min="0.1" max="0.5" step="0.01" oninput="calc()" />
+        </div>
+        <div class="info-box" id="k-info"></div>
+      </div>
+      <button class="reset-btn" onclick="resetAll()">↺ Reset to defaults</button>
+    </div>
+
+    <!-- RIGHT: Tooling -->
+    <div class="card">
+      <h2>Your Titan Tooling</h2>
+      <div class="section-label">Punch</div>
+      <div class="punch-grid" style="margin-bottom:16px">
+        <button class="punch-btn active" id="punch-35" onclick="setPunch('35deg')">
+          <div class="punch-name">35° Heavy Duty</div>
+          <div class="punch-meta">Tip R: 0.118" (3mm)</div>
+          <div class="punch-meta" style="color:var(--green)">Standard bends</div>
+        </button>
+        <button class="punch-btn" id="punch-88" onclick="setPunch('88deg')">
+          <div class="punch-name">88° Gooseneck</div>
+          <div class="punch-meta">Tip R: 0.039" (1mm)</div>
+          <div class="punch-meta" style="color:var(--accent)">Box / pan bends</div>
+        </button>
+      </div>
+
+      <div class="section-label">Die — Standard 4-Way <span style="text-transform:none;font-weight:400">(select face)</span></div>
+      <div class="die-grid" id="die-grid" style="margin-bottom:10px">
+        <button class="die-btn active" id="die-0630" onclick="selectDie(0.630,'Standard 4-Way · Face 1',this)">
+          <div class="die-dot"></div>
+          <div class="die-name">0.630" (16mm)</div>
+          <div class="die-meta">Best for: 0.060"–0.105"</div>
+          <div class="die-r" id="dr-0630">Inside R ≈ 0.101"</div>
+        </button>
+        <button class="die-btn" id="die-0866" onclick="selectDie(0.866,'Standard 4-Way · Face 2',this)">
+          <div class="die-dot"></div>
+          <div class="die-name">0.866" (22mm)</div>
+          <div class="die-meta">Best for: 0.090"–0.145"</div>
+          <div class="die-r" id="dr-0866">Inside R ≈ 0.139"</div>
+        </button>
+        <button class="die-btn" id="die-1378" onclick="selectDie(1.378,'Standard 4-Way · Face 3',this)">
+          <div class="die-dot"></div>
+          <div class="die-name">1.378" (35mm)</div>
+          <div class="die-meta">Best for: 0.145"–0.230"</div>
+          <div class="die-r" id="dr-1378">Inside R ≈ 0.220"</div>
+        </button>
+        <button class="die-btn" id="die-1969" onclick="selectDie(1.969,'Standard 4-Way · Face 4',this)">
+          <div class="die-dot"></div>
+          <div class="die-name">1.969" (50mm)</div>
+          <div class="die-meta">Best for: 0.200"–0.315"</div>
+          <div class="die-r" id="dr-1969">Inside R ≈ 0.315"</div>
+        </button>
+      </div>
+
+      <div class="section-label">Die — Acute (25mm / 0.984")</div>
+      <div style="margin-bottom:16px">
+        <button class="die-btn" id="die-acute" onclick="selectDie(0.984,'Acute Die · 25mm',this,true)" style="width:100%">
+          <div class="die-dot"></div>
+          <div class="die-name">Acute Die — 0.984" (25mm)</div>
+          <div class="die-meta">Use with 35° punch for angles &lt;90°</div>
+          <div class="die-r">Inside R ≈ 0.157"</div>
+        </button>
+      </div>
+      <div id="die-advice" class="info-box"></div>
+    </div>
+
+    <!-- Results -->
+    <div class="card full">
+      <h2>Results</h2>
+      <div class="results-grid">
+
+        <!-- BD — main result with theoretical vs empirical comparison -->
+        <div class="result-card highlight" id="bd-card" style="grid-column: span 2">
+          <div class="rlabel">Bend Deduction (BD) — Subtract per bend from flat layout</div>
+          <div class="compare-row">
+            <div class="compare-side">
+              <div class="compare-label">Theoretical</div>
+              <div class="compare-val theoretical" id="r-bd-theor">—</div>
+              <div class="compare-delta" id="r-bd-theor-sub" style="color:var(--muted)">from K-factor formula</div>
+            </div>
+            <div class="compare-arrow">→</div>
+            <div class="compare-side">
+              <div class="compare-label" id="emp-label">Empirical <span id="emp-count" style="color:var(--muted)"></span></div>
+              <div class="compare-val no-emp" id="r-bd-emp">load Excel</div>
+              <div class="compare-delta" id="r-bd-emp-sub" style="color:var(--muted)">avg of your test bends</div>
+              <button class="use-empirical-btn" id="use-emp-btn" style="display:none" onclick="useEmpiricalBD()">↑ Use this BD</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="result-card highlight">
+          <div class="rlabel">Flat / Blank Length</div>
+          <div class="rvalue" id="r-flat" style="font-size:24px">—<span class="runit">in</span></div>
+          <div class="rsub">Leg 1 + Leg 2 − BD</div>
+        </div>
+
+        <div class="result-card">
+          <div class="rlabel">Bend Allowance (BA)</div>
+          <div class="rvalue" id="r-ba">—<span class="runit">in</span></div>
+          <div class="rsub">Arc length through bend zone</div>
+        </div>
+
+        <div class="result-card">
+          <div class="rlabel">Outside Setback</div>
+          <div class="rvalue" id="r-ossb">—<span class="runit">in</span></div>
+          <div class="rsub">Tangent → outside mold line</div>
+        </div>
+
+        <div class="result-card">
+          <div class="rlabel">Inside Bend Radius</div>
+          <div class="rvalue" id="r-radius">—<span class="runit">in</span></div>
+          <div class="rsub">Set in CAD / BendControl</div>
+        </div>
+
+        <div class="result-card" id="tonnage-card">
+          <div class="rlabel">Required Tonnage</div>
+          <div class="rvalue" id="r-tonnage">—<span class="runit">T</span></div>
+          <div class="rsub" id="r-tonnage-sub"></div>
+          <div class="tonnage-bar-wrap">
+            <div class="tonnage-label"><span id="tbar-label">0T used</span><span>25T max</span></div>
+            <div class="tonnage-track"><div class="tonnage-fill" id="tonnage-fill" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div class="result-card" id="die-rec-card">
+          <div class="rlabel">Recommended Die Face</div>
+          <div class="rvalue" style="font-size:15px" id="r-die-rec">—</div>
+          <div class="rsub" id="r-die-rec-sub"></div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <h2>Flat Length Helper</h2>
+      <div class="grid2" style="gap:12px; margin-bottom:12px">
+        <div class="field" style="margin:0">
+          <label>Leg 1 — outside dimension</label>
+          <div class="input-row">
+            <input type="number" id="leg1" value="2.000" min="0" step="0.001" oninput="calc()" />
+            <span class="unit">in</span>
+          </div>
+        </div>
+        <div class="field" style="margin:0">
+          <label>Leg 2 — outside dimension</label>
+          <div class="input-row">
+            <input type="number" id="leg2" value="2.000" min="0" step="0.001" oninput="calc()" />
+            <span class="unit">in</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <h2>K-Factor Back-Calculator &nbsp;<span style="font-style:italic;font-weight:400;color:var(--muted);font-size:11px;text-transform:none">Dial in your exact K after a test bend</span></h2>
+      <div class="grid2" style="gap:12px; margin-bottom:12px">
+        <div class="field" style="margin:0">
+          <label>Blank length you cut</label>
+          <div class="input-row">
+            <input type="number" id="bc-blank" value="6.000" min="0" step="0.001" oninput="calcK()" />
+            <span class="unit">in</span>
+          </div>
+        </div>
+        <div class="field" style="margin:0">
+          <label>Measured leg 1 (outside)</label>
+          <div class="input-row">
+            <input type="number" id="bc-m1" value="3.000" min="0" step="0.001" oninput="calcK()" />
+            <span class="unit">in</span>
+          </div>
+        </div>
+        <div class="field" style="margin:0">
+          <label>Measured leg 2 (outside)</label>
+          <div class="input-row">
+            <input type="number" id="bc-m2" value="3.000" min="0" step="0.001" oninput="calcK()" />
+            <span class="unit">in</span>
+          </div>
+        </div>
+        <div class="result-card ok-card" style="align-self:end">
+          <div class="rlabel">Your Actual K-Factor</div>
+          <div class="rvalue" id="r-kback" style="color:var(--green)">—</div>
+          <div class="rsub" id="r-kback-sub"></div>
+        </div>
+      </div>
+      <div class="info-box">Cut a 6" blank, bend 90° with your production tooling, measure both outside legs. Enter above — your real K-factor appears instantly. Then log it in the Excel spreadsheet.</div>
+    </div>
+
+  </div><!-- /grid2 -->
+</div><!-- /container -->
 
 <script>
-// ══════════════════════════════════════════
-//  DATABASE (IndexedDB for photos)
-// ══════════════════════════════════════════
-let db;
-function initDB() {
-  return new Promise((res, rej) => {
-    const req = indexedDB.open('FRCScout', 1);
-    req.onupgradeneeded = e => {
-      const d = e.target.result;
-      if (!d.objectStoreNames.contains('photos')) d.createObjectStore('photos', { keyPath: 'k' });
-    };
-    req.onsuccess = e => { db = e.target.result; res(); };
-    req.onerror = rej;
-  });
-}
-function dbPut(k, dataUrl) {
-  return new Promise(res => { const tx = db.transaction('photos','readwrite'); tx.objectStore('photos').put({k,dataUrl}); tx.oncomplete=res; });
-}
-function dbGet(k) {
-  return new Promise(res => { const tx=db.transaction('photos','readonly'); const r=tx.objectStore('photos').get(k); r.onsuccess=()=>res(r.result?.dataUrl||null); r.onerror=()=>res(null); });
-}
+// ─── State ───────────────────────────────────────────────────────────────────
+let mat          = 'aluminum';
+let currentDieV  = 0.630;
+let currentDieName = 'Standard 4-Way · Face 1';
+let currentPunch = '35deg';
 
-// ══════════════════════════════════════════
-//  LOCAL STORAGE HELPERS
-// ══════════════════════════════════════════
-const LS = {
-  get: k => { try { return JSON.parse(localStorage.getItem(k)||'null'); } catch { return null; } },
-  set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
-};
-const getSettings = () => LS.get('frc_settings') || {};
-const setSettings = v => LS.set('frc_settings', v);
-const getTeams = () => LS.get('frc_teams') || {};
-const setTeams = v => LS.set('frc_teams', v);
-const getScoutAll = () => LS.get('frc_scout') || {};
-const getScout = n => (getScoutAll()[n] || { rating:0, notes:'', fields:{} });
-const setScout = (n,d) => { const all=getScoutAll(); all[n]=d; LS.set('frc_scout',all); };
-const getTBACache = () => LS.get('frc_tba') || {};
-const getImportData = () => LS.get('frc_import') || {};
-const setImportData = v => LS.set('frc_import', v);
-const setTBACache = v => LS.set('frc_tba', v);
-const getColorsCache = () => LS.get('frc_colors') || {};
-const setColorsCache = v => LS.set('frc_colors', v);
+// Excel-loaded data
+let excelLoaded    = false;
+let empiricalData  = {};   // key: "alloy|thick_thou|v_thou|angle" → {bds:[], ks:[]}
+let excelKFactors  = {};   // alloy_excel_str → K value from My Tooling sheet
 
-// ══════════════════════════════════════════
-//  APP STATE
-// ══════════════════════════════════════════
-let S = {
-  view: 'teams',   // 'teams' | 'detail' | 'settings' | 'match' | 'insights'
-  team: null,
-  loadingTBA: false,
-  tbaError: null,
-  matchData: null,
-  loadingMatch: false,
-  matchError: null,
-  allMatches: null,
-  selectedMatchKey: null,
+// Alloy mapping: HTML val → Excel string used in log + K-factor table
+const ALLOY_TO_EXCEL = {
+  '5052': '5052-H32',
+  '6061': '6061-T6',
+  '3003': '3003-H14',
+  'A36':  'A36 HR',
+  'HR':   'A36 HR',
+  'CR':   'CR Steel',
 };
 
-// ══════════════════════════════════════════
-//  NAVIGATION
-// ══════════════════════════════════════════
-function nav(view, opts={}) {
-  // Auto-save notes when leaving detail
-  if (S.view === 'detail') {
-    const ta = document.getElementById('sc-notes');
-    if (ta) { const d=getScout(S.team); d.notes=ta.value; setScout(S.team,d); }
-  }
-  Object.assign(S, { view, ...opts });
-  render();
-  document.getElementById('main-content').scrollTop = 0;
-  window.scrollTo(0,0);
+const ALLOYS = {
+  aluminum: [
+    { val:'5052', label:'5052-H32 (most common)', k:0.38 },
+    { val:'6061', label:'6061-T6 (springback-prone)', k:0.40 },
+    { val:'3003', label:'3003-H14 (very soft)', k:0.35 },
+  ],
+  mild_steel: [
+    { val:'A36', label:'A36 Hot-Rolled',   k:0.42 },
+    { val:'HR',  label:'HR Steel (generic)', k:0.42 },
+    { val:'CR',  label:'Cold-Rolled Steel', k:0.44 },
+  ]
+};
+
+const TONNAGE_FACTOR = { aluminum: 0.5, mild_steel: 1.0 };
+
+const DIE_IDS = {
+  0.630: 'die-0630', 0.866: 'die-0866', 1.378: 'die-1378',
+  1.969: 'die-1969', 0.984: 'die-acute'
+};
+
+function getAlloy() {
+  const sel = document.getElementById('alloy');
+  return ALLOYS[mat].find(a => a.val === sel.value) || ALLOYS[mat][0];
 }
 
-// ══════════════════════════════════════════
-//  RENDER
-// ══════════════════════════════════════════
-function render() {
-  renderHeader();
-  renderTabBar();
-  const mc = document.getElementById('main-content');
-  if (S.view === 'detail') { mc.classList.add('no-tabbar'); document.getElementById('tab-bar').style.display='none'; }
-  else { mc.classList.remove('no-tabbar'); document.getElementById('tab-bar').style.display='flex'; }
-
-  const footer = `<div style="text-align:center;padding:20px 16px 8px;font-size:11px;font-weight:500;color:rgba(244,244,238,0.25);letter-spacing:0.04em;">Developed by Dave Powers for FRC 6328</div>`;
-  if (S.view === 'teams') mc.innerHTML = teamsView();
-  else if (S.view === 'detail') { mc.innerHTML = detailView(); loadPhoto(S.team); }
-  else if (S.view === 'match') { mc.innerHTML = matchView(); loadMatchPhotos(); }
-  else if (S.view === 'insights') mc.innerHTML = insightsView();
-  else if (S.view === 'settings') mc.innerHTML = settingsView() + footer;
+function getExcelKey() {
+  const alloy   = getAlloy();
+  const T       = parseFloat(document.getElementById('thickness').value) || 0;
+  const angleDeg = parseFloat(document.getElementById('angle').value) || 90;
+  const exKey   = ALLOY_TO_EXCEL[alloy.val] || alloy.val;
+  return `${exKey}|${Math.round(T * 10000)}|${Math.round(currentDieV * 10000)}|${Math.round(angleDeg)}`;
 }
 
-function renderHeader() {
-  const settings = getSettings();
-  const ev = settings.eventCode ? `<span style="font-size:12px;color:#93c5fd;margin-left:8px;">${settings.eventCode.toUpperCase()}</span>` : '';
-  let inner = '';
-  if (S.view === 'detail' && S.team) {
-    const teams = getTeams();
-    const t = teams[S.team] || {};
-    const { primary, secondary, textColor } = teamColors(S.team);
-    const hdr = document.getElementById('header');
-    if (hdr) hdr.style.background = `linear-gradient(135deg, ${primary}, ${secondary})`;
-    inner = `
-      <button onclick="nav('teams')" style="display:flex;align-items:center;gap:4px;color:${textColor};background:none;border:none;cursor:pointer;padding:8px 0;margin-left:-4px;opacity:0.9;">
-        <svg class="detail-back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-        <span class="detail-back-label">Teams</span>
-      </button>
-      <span class="detail-title-text" style="color:${textColor};position:absolute;left:50%;transform:translateX(-50%);">Team ${S.team}</span>
-      <div style="width:70px"></div>
-    `;
-  } else {
-    const hdr = document.getElementById('header');
-    if (hdr) hdr.style.background = '#162F65';
-    inner = `
-      <div style="display:flex;align-items:center;gap:12px;">
-        <img src="data:image/png;base64,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" alt="6328 Logo" style="height:50px;width:auto;flex-shrink:0;">
-        <div style="width:1px;height:36px;background:rgba(239,171,40,0.35);flex-shrink:0;"></div>
-        <div style="display:flex;flex-direction:column;gap:1px;">
-          <span style="font-family:'Plus Jakarta Sans', sans-serif;font-weight:700;font-size:22px;color:#F4F4EE;line-height:1;letter-spacing:0.5px;">DaveScout<span style="color:#EFAB28;">.io</span></span>
-          ${ev ? `<span style="font-family:'Plus Jakarta Sans', sans-serif;font-size:13px;font-weight:600;color:rgba(244,244,238,0.5);letter-spacing:1.5px;text-transform:uppercase;">${ev}</span>` : ''}
-        </div>
-      </div>
-    `;
-  }
-  document.getElementById('header-inner').innerHTML = inner;
-  document.getElementById('header-inner').style.position = 'relative';
+// ─── Google Sheets connection ──────────────────────────────────────────────────
+let gsSheetId    = null;
+let gsRefreshTimer = null;
+
+function extractSheetId(url) {
+  const m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return m ? m[1] : null;
 }
 
-function renderTabBar() {
-  document.getElementById('tab-bar').innerHTML = `
-    <button class="tab-btn ${S.view==='teams'?'active':''}" onclick="nav('teams')">
-      <span class="tab-icon">🏆</span>
-      <span class="tab-label" style="color:${S.view==='teams'?'#EFAB28':'#94a3b8'}">Teams</span>
-    </button>
-    <button class="tab-btn ${S.view==='match'?'active':''}" onclick="nav('match')">
-      <span class="tab-icon">⚡</span>
-      <span class="tab-label" style="color:${S.view==='match'?'#EFAB28':'#94a3b8'}">Match</span>
-    </button>
-    <button class="tab-btn ${S.view==='insights'?'active':''}" onclick="nav('insights')">
-      <span class="tab-icon">📊</span>
-      <span class="tab-label" style="color:${S.view==='insights'?'#EFAB28':'#94a3b8'}">Insights</span>
-    </button>
-    <button class="tab-btn ${S.view==='settings'?'active':''}" onclick="nav('settings')">
-      <span class="tab-icon">⚙️</span>
-      <span class="tab-label" style="color:${S.view==='settings'?'#EFAB28':'#94a3b8'}">Settings</span>
-    </button>
-  `;
-}
-
-// ══════════════════════════════════════════
-//  TEAMS VIEW
-// ══════════════════════════════════════════
-function teamsView() {
-  const teams = getTeams();
-  const teamList = Object.values(teams).sort((a,b)=>a.number-b.number);
-  const settings = getSettings();
-  const hasTeams = teamList.length > 0;
-  const scoutAll = getScoutAll();
-
-  // Build rank + RP + avg score lookup from cached TBA rankings
-  const tba = getTBACache();
-  const rankLookup = {};
-  if (tba?.rankings?.rankings) {
-    tba.rankings.rankings.forEach(r => {
-      const num = parseInt(r.team_key.replace('frc',''));
-      const rpAvg = r.sort_orders?.[0] ?? 0;
-      const avgScore = r.sort_orders?.[1] ?? null;
-      const played = r.matches_played ?? 0;
-      rankLookup[num] = {
-        rank: r.rank,
-        totalRPs: played > 0 ? Math.round(rpAvg * played) : 0,
-        avgScore: avgScore != null ? parseFloat(avgScore.toFixed(1)) : null,
-      };
-    });
-  }
-
-  const teamCards = teamList.map(t => {
-    const s = scoutAll[t.number] || {};
-    const stars = s.rating ? '★'.repeat(s.rating) + '☆'.repeat(5-s.rating) : '';
-    const { primary, secondary, textColor } = teamColors(t.number);
-    const rk = rankLookup[t.number];
-    const rankLine = rk
-      ? `<div style="margin-top:4px;display:flex;flex-direction:column;align-items:center;gap:2px;">
-           <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
-             <span style="font-size:9px;font-weight:700;opacity:0.7;">#${rk.rank}</span>
-             <span style="font-size:8px;opacity:0.35;">·</span>
-             <span style="font-size:9px;font-weight:700;color:#EFAB28;opacity:0.9;">${rk.totalRPs}RP</span>
-           </div>
-           ${rk.avgScore != null ? `<span style="font-size:9px;font-weight:600;opacity:0.55;">avg ${rk.avgScore}</span>` : ''}
-         </div>`
-      : '';
-    return `
-      <div class="team-card"
-        data-num="${t.number}"
-        data-name="${esc((t.name||'').toLowerCase())}"
-        onclick="openTeam(${t.number})"
-        style="background: linear-gradient(145deg, ${primary} 55%, ${secondary}); color: ${textColor};">
-        <div class="team-card-num">${t.number}</div>
-        <div class="team-card-name" style="font-size:${(()=>{const n=(t.name||'Team '+t.number).length;return n<=10?'10px':n<=14?'9px':n<=18?'8px':'7px';})()};">${esc(t.name||'Team '+t.number)}</div>
-        ${stars ? `<div class="team-card-stars" style="opacity:0.9;">${stars}</div>` : ''}
-        ${rankLine}
-      </div>
-    `;
-  }).join('');
-
-  const emptyState = hasTeams ? '' : `
-    <div class="card" style="padding:32px 24px;text-align:center;margin-bottom:16px;">
-      <div style="font-size:52px;margin-bottom:12px;">📋</div>
-      <div style="font-family:'Plus Jakarta Sans', sans-serif;font-weight:700;font-size:18px;color:#F4F4EE;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">No Teams Yet</div>
-      <div style="font-size:15px;color:rgba(244,244,238,0.55);margin-bottom:20px;">
-        ${(!settings.apiKey || !settings.eventCode) ? 'Set up your TBA API key and event code in Settings to auto-load teams, or add them manually.' : 'Tap "Load from TBA" to fetch all teams and their colors.'}
-      </div>
-      ${(!settings.apiKey || !settings.eventCode) ? `<button class="btn-primary" onclick="nav('settings')" style="margin-bottom:10px;">Go to Settings</button>` : `<button class="btn-primary" onclick="loadTeams()" style="margin-bottom:10px;">${S.loadingTBA?'⏳ Loading...':'📡 Load from TBA'}</button>`}
-      <button class="btn-secondary" onclick="showAddTeam()">+ Add Team Manually</button>
-    </div>
-  `;
-
-  return `
-    <div class="view-pad">
-      <div style="position:relative;margin-bottom:14px;">
-        <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:16px;">🔍</span>
-        <input class="form-input" style="padding-left:38px;" type="text" inputmode="text" placeholder="Search by number or name..." oninput="filterTeams(this.value)" id="searchInput">
-      </div>
-
-      ${hasTeams ? `
-        <div style="display:flex;gap:8px;margin-bottom:14px;">
-          <button class="btn-primary" style="flex:1;padding:11px;" onclick="loadTeams()">${S.loadingTBA?'⏳ Loading...':'🔄 Refresh from TBA'}</button>
-          <button class="btn-secondary" style="width:auto;padding:11px 16px;flex-shrink:0;" onclick="showAddTeam()">+ Add</button>
-        </div>
-        ${S.tbaError ? `<div style="color:#ef4444;font-size:13px;margin-bottom:10px;padding:10px;background:#fef2f2;border-radius:10px;">${esc(S.tbaError)}</div>` : ''}
-        <div class="teams-grid" id="teamsGrid">
-          ${teamCards}
-        </div>
-      ` : emptyState}
-
-      ${!hasTeams && S.tbaError ? `<div style="color:#ef4444;font-size:13px;margin-top:10px;padding:10px;background:#fef2f2;border-radius:10px;">${esc(S.tbaError)}</div>` : ''}
-    </div>
-  `;
-}
-
-function filterTeams(q) {
-  const query = q.toLowerCase().trim();
-  document.querySelectorAll('#teamsGrid .team-card').forEach(card => {
-    const num = (card.dataset.num||'');
-    const name = (card.dataset.name||'');
-    const show = !query || num.includes(query) || name.includes(query);
-    card.style.display = show ? '' : 'none';
-  });
-}
-
-function showAddTeam() {
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay'; modal.id = 'addTeamModal';
-  modal.onclick = e => { if(e.target===modal) modal.remove(); };
-  modal.innerHTML = `
-    <div class="modal-sheet">
-      <div class="modal-handle"></div>
-      <h2 style="font-size:18px;font-weight:700;color:#F4F4EE;margin-bottom:20px;">Add Team Manually</h2>
-      <div style="margin-bottom:14px;">
-        <label style="font-size:14px;font-weight:600;color:rgba(244,244,238,0.7);display:block;margin-bottom:6px;">Team Number *</label>
-        <input class="form-input" id="mt-num" type="number" inputmode="numeric" placeholder="e.g. 254">
-      </div>
-      <div style="margin-bottom:24px;">
-        <label style="font-size:14px;font-weight:600;color:rgba(244,244,238,0.7);display:block;margin-bottom:6px;">Team Name (optional)</label>
-        <input class="form-input" id="mt-name" type="text" placeholder="e.g. The Cheesy Poofs">
-      </div>
-      <div style="display:flex;gap:10px;">
-        <button class="btn-secondary" onclick="document.getElementById('addTeamModal').remove()">Cancel</button>
-        <button class="btn-primary" onclick="doAddTeam()">Add Team</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(modal);
-  setTimeout(() => document.getElementById('mt-num')?.focus(), 50);
-}
-
-function doAddTeam() {
-  const num = parseInt(document.getElementById('mt-num')?.value);
-  const name = document.getElementById('mt-name')?.value.trim();
-  if (!num || num < 1 || num > 99999) { alert('Please enter a valid team number (1-99999).'); return; }
-  const teams = getTeams();
-  teams[num] = { number: num, name: name || `Team ${num}`, city:'', state:'', country:'' };
-  setTeams(teams);
-  document.getElementById('addTeamModal')?.remove();
-  render();
-}
-
-async function loadTeams() {
-  const settings = getSettings();
-  if (!settings.apiKey) { alert('Please add your TBA API key in Settings first.'); nav('settings'); return; }
-  if (!settings.eventCode) { alert('Please enter an event code in Settings first.'); nav('settings'); return; }
-  S.loadingTBA = true; S.tbaError = null; render();
-  try {
-    const [teamsRes, rankRes, oprRes, colorsRes] = await Promise.all([
-      tbaFetch(`/event/${settings.eventCode}/teams/simple`),
-      tbaFetch(`/event/${settings.eventCode}/rankings`).catch(()=>null),
-      tbaFetch(`/event/${settings.eventCode}/oprs`).catch(()=>null),
-      fetch(`https://api.frc-colors.com/v1/event/${settings.eventCode}`).then(r=>r.ok?r.json():null).catch(()=>null),
-    ]);
-    const teamMap = {};
-    teamsRes.forEach(t => { teamMap[t.team_number] = { number:t.team_number, name:t.nickname, city:t.city, state:t.state_prov, country:t.country }; });
-    setTeams(teamMap);
-    setTBACache({ rankings: rankRes, oprs: oprRes, fetchedAt: Date.now() });
-    if (colorsRes?.teams) setColorsCache(colorsRes.teams);
-    S.loadingTBA = false; render();
-  } catch(err) {
-    S.loadingTBA = false;
-    const msg = err.message || String(err);
-    if (err instanceof TypeError || msg.toLowerCase().includes('load failed') || msg.toLowerCase().includes('failed to fetch')) {
-      S.tbaError = `Network error — check your internet connection and that your API key and event code are entered in Settings.`;
-    } else {
-      S.tbaError = `Failed: ${msg}`;
-    }
-    render();
-  }
-}
-
-// Returns {primary, secondary, textColor} for a team number
-function teamColors(num) {
-  const cache = getColorsCache();
-  const entry = cache[String(num)];
-  const primary = entry?.colors?.primaryHex || '#162F65';
-  const secondary = entry?.colors?.secondaryHex || '#2F4E94';
-  const textColor = colorIsLight(primary) ? '#151D3B' : '#ffffff';
-  return { primary, secondary, textColor };
-}
-
-// Determine if a hex color is light (for text contrast)
-function colorIsLight(hex) {
-  const c = hex.replace('#','');
-  const r = parseInt(c.substr(0,2),16);
-  const g = parseInt(c.substr(2,2),16);
-  const b = parseInt(c.substr(4,2),16);
-  return (0.299*r + 0.587*g + 0.114*b) > 160;
-}
-
-async function tbaFetch(path) {
-  const settings = getSettings();
-  const r = await fetch(`https://www.thebluealliance.com/api/v3${path}`, { headers: { 'X-TBA-Auth-Key': settings.apiKey } });
-  if (!r.ok) throw new Error(`TBA returned ${r.status} for ${path}`);
-  return r.json();
-}
-
-// ══════════════════════════════════════════
-//  TEAM DETAIL VIEW
-// ══════════════════════════════════════════
-async function openTeam(num) {
-  S.team = num; S.view = 'detail';
-  render();
-}
-
-async function loadPhoto(num) {
-  const photo = await dbGet(`team_${num}`);
-  if (photo) {
-    const img = document.getElementById('sc-photo');
-    const ph = document.getElementById('sc-photo-ph');
-    if (img) { img.src = photo; img.style.display = 'block'; }
-    if (ph) ph.style.display = 'none';
-  }
-}
-
-function detailView() {
-  const num = S.team;
-  const teams = getTeams();
-  const t = teams[num] || { number: num, name: `Team ${num}` };
-  const scout = getScout(num);
-  const settings = getSettings();
-  const tba = getTBACache();
-
-  const loc = [t.city, t.state, t.country].filter(Boolean).join(', ');
-  const stars = [1,2,3,4,5].map(i => `<button class="star-btn" style="font-size:28px;padding:2px;" onclick="setRating(${i})" id="star${i}">${i<=(scout.rating||0)?'⭐':'☆'}</button>`).join('');
-
-  // TBA stats
-  const tbaStats = buildStatsHTML(num, tba);
-
-  // Custom fields
-  const customFields = (settings.customFields||[]).map(f => buildFieldHTML(f, (scout.fields||{})[f.name])).join('');
-  const customSection = customFields ? `
-    <div style="margin-bottom:4px;">
-      <div class="section-label">Scouting Fields</div>
-      ${customFields}
-    </div>
-  ` : '';
-
-  return `
-    <div class="view-pad">
-
-      <!-- Top: Two-column layout -->
-      <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;">
-
-        <!-- LEFT: Robot Photo -->
-        <div class="card" style="padding:12px;flex:0 0 42%;min-width:0;">
-          <div class="section-label" style="margin-bottom:8px;">Robot Photo</div>
-          <div id="sc-photo-ph" class="photo-placeholder" onclick="triggerPhoto()" style="aspect-ratio:3/4;border-radius:10px;">
-            <span style="font-size:36px;">📸</span>
-            <span style="font-weight:600;color:#475569;font-size:16px;">Tap to Add</span>
-          </div>
-          <img id="sc-photo" class="robot-photo" alt="Robot photo" onclick="triggerPhoto()" style="cursor:pointer;aspect-ratio:3/4;border-radius:10px;">
-          <input type="file" id="sc-photo-input" accept="image/*" class="hidden" onchange="handlePhoto(this)" style="display:none;">
-          <div style="margin-top:8px;text-align:center;">
-            <button onclick="triggerPhoto()" style="font-size:15px;color:#EFAB28;background:none;border:none;cursor:pointer;font-weight:600;">📷 Change</button>
-            &nbsp;·&nbsp;
-            <button onclick="removePhoto()" style="font-size:15px;color:rgba(248,113,113,0.9);background:none;border:none;cursor:pointer;font-weight:600;">Remove</button>
-          </div>
-        </div>
-
-        <!-- RIGHT: Team info + stats + rating + custom fields -->
-        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:12px;">
-
-          <!-- Team Info -->
-          <div class="card" style="padding:14px;">
-            <div style="font-family:'Plus Jakarta Sans', sans-serif;font-size:28px;font-weight:600;color:#F4F4EE;letter-spacing:0.05em;">Team ${t.number}</div>
-            <div style="font-family:'Plus Jakarta Sans', sans-serif;font-size:20px;font-weight:700;color:#EFAB28;margin-top:2px;text-transform:uppercase;letter-spacing:0.05em;line-height:1.2;">${esc(t.name||'')}</div>
-            ${loc ? `<div style="font-size:15px;color:rgba(244,244,238,0.55);margin-top:4px;">📍 ${esc(loc)}</div>` : ''}
-          </div>
-
-          <!-- TBA Stats -->
-          ${tbaStats}
-
-          <!-- Star Rating -->
-          <div class="card" style="padding:14px;text-align:center;">
-            <div class="section-label" style="text-align:left;margin-bottom:6px;">Rating</div>
-            <div class="star-row" style="justify-content:center;">${stars}</div>
-            <div id="rating-label" style="font-size:15px;color:rgba(244,244,238,0.55);margin-top:6px;">${ratingLabel(scout.rating||0)}</div>
-          </div>
-
-          <!-- Scouting Notes -->
-          <div class="card" style="padding:14px;">
-            <div class="section-label">Scouting Notes</div>
-            <textarea class="form-input" id="sc-notes" rows="5" placeholder="Observations, auto strategy, strengths, weaknesses, game piece preferences…" onblur="autoSaveNotes()">${esc(scout.notes||'')}</textarea>
-          </div>
-
-          <!-- Custom Fields -->
-          ${customSection ? `<div class="card" style="padding:14px;">${customSection}</div>` : ''}
-
-        </div>
-      </div>
-
-      <!-- Save Button -->
-      <button class="btn-primary" id="sc-save-btn" onclick="saveDetail()">💾 Save</button>
-      <div style="height:8px;"></div>
-    </div>
-  `;
-}
-
-function buildStatsHTML(num, tba) {
-  let rankData = null, oprData = null;
-  const key = `frc${num}`;
-  if (tba?.rankings?.rankings) {
-    const r = tba.rankings.rankings.find(x => x.team_key === key);
-    if (r) rankData = { rank: r.rank, w: r.record?.wins??'?', l: r.record?.losses??'?', t: r.record?.ties??'?' };
-  }
-  if (tba?.oprs?.oprs?.[key] !== undefined) {
-    oprData = {
-      opr: (tba.oprs.oprs[key]??0).toFixed(1),
-      dpr: (tba.oprs.dprs?.[key]??0).toFixed(1),
-      ccwm: (tba.oprs.ccwms?.[key]??0).toFixed(1),
-    };
-  }
-  if (!rankData && !oprData) return `
-    <div class="card" style="padding:14px;">
-      <div class="section-label">Event Stats</div>
-      <div style="font-size:15px;color:rgba(244,244,238,0.55);">No stats yet. Refresh from TBA to see rankings and OPR.</div>
-    </div>
-  `;
-
-  // Calculate event-wide OPR/DPR/CCWM ranks
-  let oprRank = 0, dprRank = 0, ccwmRank = 0, totalTeams = 0;
-  if (tba?.oprs?.oprs) {
-    const oprs = tba.oprs.oprs, dprs = tba.oprs.dprs || {}, ccwms = tba.oprs.ccwms || {};
-    const keys = Object.keys(oprs);
-    totalTeams = keys.length;
-    if (totalTeams > 0) {
-      const oprSorted = keys.slice().sort((a,b) => (oprs[b]??0)-(oprs[a]??0));
-      oprRank = oprSorted.indexOf(key) + 1;
-      const dprSorted = keys.slice().sort((a,b) => (dprs[a]??0)-(dprs[b]??0));
-      dprRank = dprSorted.indexOf(key) + 1;
-      const ccwmSorted = keys.slice().sort((a,b) => (ccwms[b]??0)-(ccwms[a]??0));
-      ccwmRank = ccwmSorted.indexOf(key) + 1;
-    }
-  }
-  const rankBadge = (r, total) => r && total
-    ? `<div style="font-size:11px;font-weight:600;color:rgba(244,244,238,0.45);margin-top:3px;">#${r} of ${total}</div>`
-    : '';
-
-  const rankSection = rankData ? `
-    <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-      <div class="stat-box" style="padding:10px;"><div class="stat-label">Rank</div><div class="stat-value" style="color:#EFAB28;font-size:24px;">#${rankData.rank}</div></div>
-      <div class="stat-box" style="padding:10px;"><div class="stat-label">Record</div><div class="stat-value" style="font-size:22px;">${rankData.w}-${rankData.l}-${rankData.t}</div></div>
-    </div>` : '';
-  const oprSection = oprData ? `
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <div class="stat-box" style="padding:10px;"><div class="stat-label">OPR</div><div class="stat-value" style="color:#16a34a;font-size:22px;">${oprData.opr}</div>${rankBadge(oprRank,totalTeams)}</div>
-      <div class="stat-box" style="padding:10px;"><div class="stat-label">DPR</div><div class="stat-value" style="font-size:22px;">${oprData.dpr}</div>${rankBadge(dprRank,totalTeams)}</div>
-      <div class="stat-box" style="padding:10px;"><div class="stat-label">CCWM</div><div class="stat-value" style="font-size:22px;">${oprData.ccwm}</div>${rankBadge(ccwmRank,totalTeams)}</div>
-    </div>` : '';
-
-  return `
-    <div class="card" style="padding:14px;">
-      <div class="section-label">Event Stats</div>
-      ${rankSection}${oprSection}
-    </div>
-  `;
-}
-
-function buildFieldHTML(field, value) {
-  const id = `cf_${field.name.replace(/\W/g,'_')}`;
-  if (field.type === 'toggle') return `
-    <div class="toggle-wrap" style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
-      <label style="font-size:15px;font-weight:500;color:#F4F4EE;">${esc(field.name)}</label>
-      <label class="toggle-switch">
-        <input type="checkbox" id="${id}" ${value?'checked':''} onchange="saveField('${esc(field.name)}', this.checked)">
-        <span class="toggle-slider"></span>
-      </label>
-    </div>`;
-  if (field.type === 'select' && field.options) {
-    const opts = field.options.split(',').map(o=>o.trim());
-    return `
-      <div style="margin-bottom:14px;">
-        <label style="font-size:15px;font-weight:600;color:rgba(244,244,238,0.7);display:block;margin-bottom:6px;">${esc(field.name)}</label>
-        <select class="form-input" id="${id}" onchange="saveField('${esc(field.name)}', this.value)">
-          <option value="">Select…</option>
-          ${opts.map(o=>`<option value="${esc(o)}"${value===o?' selected':''}>${esc(o)}</option>`).join('')}
-        </select>
-      </div>`;
-  }
-  if (field.type === 'number') return `
-    <div style="margin-bottom:14px;">
-      <label style="font-size:15px;font-weight:600;color:rgba(244,244,238,0.7);display:block;margin-bottom:6px;">${esc(field.name)}</label>
-      <input class="form-input" id="${id}" type="number" inputmode="decimal" value="${esc(value||'')}" placeholder="${esc(field.placeholder||'Enter number…')}" onchange="saveField('${esc(field.name)}', this.value)">
-    </div>`;
-  return `
-    <div style="margin-bottom:14px;">
-      <label style="font-size:15px;font-weight:600;color:rgba(244,244,238,0.7);display:block;margin-bottom:6px;">${esc(field.name)}</label>
-      <input class="form-input" id="${id}" type="text" value="${esc(value||'')}" placeholder="${esc(field.placeholder||'Enter value…')}" onchange="saveField('${esc(field.name)}', this.value)">
-    </div>`;
-}
-
-function triggerPhoto() { document.getElementById('sc-photo-input')?.click(); }
-
-async function handlePhoto(input) {
-  const file = input.files?.[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = async e => {
-    const compressed = await compressImage(e.target.result, 1000, 0.75);
-    await dbPut(`team_${S.team}`, compressed);
-    const img = document.getElementById('sc-photo');
-    const ph = document.getElementById('sc-photo-ph');
-    if (img) { img.src = compressed; img.style.display='block'; }
-    if (ph) ph.style.display='none';
-  };
-  reader.readAsDataURL(file);
-}
-
-async function removePhoto() {
-  if (!confirm('Remove this photo?')) return;
-  await dbPut(`team_${S.team}`, null);
-  const img = document.getElementById('sc-photo');
-  const ph = document.getElementById('sc-photo-ph');
-  if (img) { img.src=''; img.style.display='none'; }
-  if (ph) ph.style.display='flex';
-}
-
-function compressImage(dataUrl, maxW, quality) {
-  return new Promise(res => {
-    const img = new Image();
-    img.onload = () => {
-      let w=img.width, h=img.height;
-      if (w>maxW) { h=h*maxW/w; w=maxW; }
-      const c=document.createElement('canvas'); c.width=w; c.height=h;
-      c.getContext('2d').drawImage(img,0,0,w,h);
-      res(c.toDataURL('image/jpeg', quality));
-    };
-    img.src=dataUrl;
-  });
-}
-
-function setRating(n) {
-  const d=getScout(S.team); d.rating=n; setScout(S.team,d);
-  for(let i=1;i<=5;i++) { const el=document.getElementById(`star${i}`); if(el) el.textContent=i<=n?'⭐':'☆'; }
-  const lbl=document.getElementById('rating-label'); if(lbl) lbl.textContent=ratingLabel(n);
-}
-
-function ratingLabel(n) {
-  return ['Not yet rated','Weak','Below Average','Average','Strong','Outstanding!'][n]||'';
-}
-
-function saveField(name, value) {
-  const d=getScout(S.team); if(!d.fields) d.fields={}; d.fields[name]=value; setScout(S.team,d);
-}
-
-function autoSaveNotes() {
-  const ta=document.getElementById('sc-notes'); if(!ta) return;
-  const d=getScout(S.team); d.notes=ta.value; setScout(S.team,d);
-}
-
-function saveDetail() {
-  autoSaveNotes();
-  const btn=document.getElementById('sc-save-btn');
-  if(btn){btn.textContent='✅ Saved!'; setTimeout(()=>{btn.textContent='💾 Save';},1800);}
-}
-
-// ══════════════════════════════════════════
-//  SETTINGS VIEW
-// ══════════════════════════════════════════
-
-// ══════════════════════════════════════════
-//  INSIGHTS VIEW
-// ══════════════════════════════════════════
-
-
-// ══════════════════════════════════════════
-//  MATCH VIEW
-// ══════════════════════════════════════════
-
-// Sort helper for match ordering
-function sortMatches(matches) {
-  const lvl = { qm: 0, sf: 1, f: 2 };
-  return [...matches].sort((a, b) => {
-    const la = lvl[a.comp_level] ?? 3, lb = lvl[b.comp_level] ?? 3;
-    return la !== lb ? la - lb : a.match_number - b.match_number;
-  });
-}
-
-async function loadNextMatch() {
-  const settings = getSettings();
-  if (!settings.apiKey || !settings.eventCode) {
-    alert('Configure TBA API key and event code in Settings first.');
-    nav('settings'); return;
-  }
-  S.loadingMatch = true; S.matchError = null; S.matchData = null; render();
-
-  try {
-    const raw = await tbaFetch(`/team/frc6328/event/${settings.eventCode}/matches/simple`);
-    S.allMatches = sortMatches(raw);
-
-    // Find next unplayed match
-    const unplayed = S.allMatches.filter(m => m.alliances.red.score === -1);
-
-    if (unplayed.length === 0) {
-      // All done — default to showing the last played match if any
-      const played = S.allMatches.filter(m => m.alliances.red.score !== -1);
-      if (played.length > 0) {
-        S.selectedMatchKey = played[played.length - 1].key;
-        await loadMatchByKey(S.selectedMatchKey);
-      } else {
-        S.matchData = { done: true };
-        S.loadingMatch = false; render();
-      }
-      return;
-    }
-
-    S.selectedMatchKey = unplayed[0].key;
-    await loadMatchByKey(S.selectedMatchKey);
-  } catch(e) {
-    S.loadingMatch = false;
-    S.matchError = `Failed to load: ${e.message}`;
-    render();
-  }
-}
-
-async function loadMatchByKey(key) {
-  S.loadingMatch = true; S.matchError = null; S.selectedMatchKey = key; render();
-
-  try {
-    // If allMatches not loaded yet, we can't look up the match
-    if (!S.allMatches) {
-      S.matchError = 'Match list not loaded. Use "Load Matches" first.';
-      S.loadingMatch = false; render(); return;
-    }
-
-    const m = S.allMatches.find(x => x.key === key);
-    if (!m) {
-      S.matchError = 'Match not found.';
-      S.loadingMatch = false; render(); return;
-    }
-
-    const redTeams = m.alliances.red.team_keys.map(k => parseInt(k.replace('frc', '')));
-    const blueTeams = m.alliances.blue.team_keys.map(k => parseInt(k.replace('frc', '')));
-    const matchNum = m.match_number;
-    const compLevel = m.comp_level;
-    const played = m.alliances.red.score !== -1;
-    const redScore = played ? m.alliances.red.score : null;
-    const blueScore = played ? m.alliances.blue.score : null;
-
-    // Fetch full match for score_breakdown (RPs) + Statbotics prediction in parallel
-    let predicted = null;
-    let redRPs = null, blueRPs = null;
-
-    const [sbResult, fullResult] = await Promise.allSettled([
-      fetch(`https://api.statbotics.io/v3/match/${key}`),
-      played ? tbaFetch(`/match/${key}`) : Promise.resolve(null)
-    ]);
-
-    if (sbResult.status === 'fulfilled' && sbResult.value?.ok) {
-      try { predicted = (await sbResult.value.json()).pred || null; } catch(e) {}
-    }
-
-    if (fullResult.status === 'fulfilled' && fullResult.value) {
-      try {
-        const sb = fullResult.value.score_breakdown;
-        if (sb) {
-          const calcRPs = (side, won, tied) => {
-            const s = sb[side] || {};
-            // Primary: TBA provides totalRankingPoints directly (most reliable)
-            if (s.totalRankingPoints != null) return s.totalRankingPoints;
-            // Fallback: game-agnostic scan for bonus RP boolean fields
-            // Covers 2026 REBUILT (energizedBonusRp, superchargedBonusRp, traversalBonusRp)
-            // and older years (rp1, rp2, rp3, etc.)
-            const base = won ? 3 : tied ? 1 : 0;
-            const bonus = Object.keys(s).filter(k =>
-              k !== 'totalRankingPoints' &&
-              typeof s[k] === 'boolean' &&
-              (/rp\d*$/i.test(k) || /rankingpoint/i.test(k) || /bonusrp/i.test(k) || /bonusrank/i.test(k))
-            ).reduce((n, k) => n + (s[k] ? 1 : 0), 0);
-            return base + bonus;
-          };
-          const tied = redScore === blueScore;
-          redRPs  = calcRPs('red',  redScore  > blueScore, tied);
-          blueRPs = calcRPs('blue', blueScore > redScore,  tied);
-        }
-      } catch(e) {}
-    }
-
-    S.matchData = { matchKey: key, matchNum, compLevel, redTeams, blueTeams, predicted, played, redScore, blueScore, redRPs, blueRPs };
-    S.loadingMatch = false; render();
-  } catch(e) {
-    S.loadingMatch = false;
-    S.matchError = `Failed to load match: ${e.message}`;
-    render();
-  }
-}
-
-function selectMatch(key) {
-  loadMatchByKey(key);
-}
-
-async function loadMatchPhotos() {
-  if (!S.matchData || S.matchData.done) return;
-  const { redTeams, blueTeams } = S.matchData;
-  const allTeams = [...redTeams, ...blueTeams];
-  for (const num of allTeams) {
-    const photo = await dbGet(`team_${num}`);
-    const img = document.getElementById(`match-photo-${num}`);
-    const ph = document.getElementById(`match-photo-ph-${num}`);
-    if (img && photo) {
-      img.src = photo; img.style.display = 'block';
-      if (ph) ph.style.display = 'none';
-    }
-  }
-}
-
-function matchView() {
-  const settings = getSettings();
-  const importData = getImportData();
-  const teams = getTeams();
-
-  const matchLabel = d => {
-    if (!d) return '';
-    if (d.comp_level === 'sf') return `Semifinal Match ${d.matchNum}`;
-    if (d.comp_level === 'f') return `Final Match ${d.matchNum}`;
-    return `Qualification Match ${d.matchNum}`;
-  };
-
-  const teamStats = num => {
-    const d = importData[num];
-    if (!d) return null;
-    return d;
-  };
-
-  const teamName = num => {
-    const t = Object.values(teams).find(t => t.number == num);
-    return t?.name || '';
-  };
-
-  const statPill = (label, value, unit='') => `
-    <div style="display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.25);border-radius:8px;padding:6px 8px;min-width:48px;">
-      <div style="font-size:10px;font-weight:600;color:rgba(244,244,238,0.5);text-transform:uppercase;letter-spacing:0.04em;">${label}</div>
-      <div style="font-size:15px;font-weight:800;color:#F4F4EE;">${value}${unit}</div>
-    </div>`;
-
-  const climbStat = stats => {
-    if (!stats || stats.climbAttempts === 0) return statPill('Climb', '—');
-    const pct = Math.round(stats.climbSuccessRate * 100);
-    const color = pct >= 75 ? '#16a34a' : pct >= 40 ? '#EFAB28' : '#ef4444';
-    return `<div style="display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.25);border-radius:8px;padding:6px 8px;min-width:48px;">
-      <div style="font-size:10px;font-weight:600;color:rgba(244,244,238,0.5);text-transform:uppercase;letter-spacing:0.04em;">Climb</div>
-      <div style="font-size:15px;font-weight:800;color:${color};">${pct}%</div>
-    </div>`;
-  };
-
-  const teamCard = (num, alliance) => {
-    const stats = teamStats(num);
-    const name = teamName(num);
-    const is6328 = num === 6328;
-    const accentColor = alliance === 'red' ? '#ef4444' : '#3b82f6';
-    return `
-      <div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:rgba(0,0,0,0.2);margin-bottom:8px;${is6328?`border:1.5px solid ${accentColor};`:'border:1px solid rgba(255,255,255,0.06);'}">
-        <!-- Robot photo thumbnail -->
-        <div style="position:relative;flex-shrink:0;width:56px;height:72px;border-radius:8px;overflow:hidden;background:rgba(0,0,0,0.3);">
-          <div id="match-photo-ph-${num}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;">🤖</div>
-          <img id="match-photo-${num}" src="" alt="" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;">
-        </div>
-        <!-- Team info + stats -->
-        <div style="flex:1;min-width:0;">
-          <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:4px;">
-            <span style="font-size:18px;font-weight:800;color:#F4F4EE;">${num}</span>
-            ${is6328 ? `<span style="font-size:10px;font-weight:700;color:${accentColor};background:rgba(239,171,40,0.15);padding:2px 6px;border-radius:4px;">US</span>` : ''}
-            ${name ? `<span style="font-size:11px;font-weight:600;color:rgba(244,244,238,0.45);text-transform:uppercase;letter-spacing:0.03em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</span>` : ''}
-          </div>
-          ${stats ? `
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            ${statPill('Auto', stats.avgAutoFuel.toFixed(1))}
-            ${statPill('Tele', stats.avgTeleFuel.toFixed(1))}
-            ${climbStat(stats)}
-          </div>` : `<div style="font-size:12px;color:rgba(244,244,238,0.3);margin-top:4px;">No scouting data</div>`}
-        </div>
-      </div>`;
-  };
-
-  const predictionBar = pred => {
-    if (!pred) return `<div style="font-size:12px;color:rgba(244,244,238,0.3);text-align:center;padding:12px;">Statbotics prediction unavailable</div>`;
-    const red = pred.red_score ?? pred.red_epa ?? 0;
-    const blue = pred.blue_score ?? pred.blue_epa ?? 0;
-    const total = red + blue || 1;
-    const redPct = Math.round((red / total) * 100);
-    const bluePct = 100 - redPct;
-    const winProb = pred.red_win_prob ?? (red / total);
-    return `
-      <div class="card" style="padding:14px;margin-top:12px;">
-        <div style="font-size:12px;font-weight:700;color:rgba(244,244,238,0.5);text-align:center;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em;">Statbotics Prediction</div>
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
-          <span style="font-size:26px;font-weight:800;color:#ef4444;">${Math.round(red)}</span>
-          <span style="font-size:13px;font-weight:600;color:rgba(244,244,238,0.4);">predicted score</span>
-          <span style="font-size:26px;font-weight:800;color:#3b82f6;">${Math.round(blue)}</span>
-        </div>
-        <div style="display:flex;border-radius:6px;overflow:hidden;height:10px;gap:2px;">
-          <div style="flex:${redPct};background:#ef4444;border-radius:6px 2px 2px 6px;"></div>
-          <div style="flex:${bluePct};background:#3b82f6;border-radius:2px 6px 6px 2px;"></div>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-top:6px;">
-          <span style="font-size:11px;color:#ef4444;font-weight:600;">${Math.round(winProb*100)}% win</span>
-          <span style="font-size:11px;color:#3b82f6;font-weight:600;">${Math.round((1-winProb)*100)}% win</span>
-        </div>
-      </div>`;
-  };
-
-  // ── Match selector dropdown (shown whenever allMatches is loaded) ──
-  const matchSelector = () => {
-    if (!S.allMatches || S.allMatches.length === 0) return '';
-    const lvlLabel = { qm: 'QM', sf: 'SF', f: 'F' };
-    const options = S.allMatches.map(m => {
-      const played = m.alliances.red.score !== -1;
-      const abbr = lvlLabel[m.comp_level] || m.comp_level.toUpperCase();
-      const isNext = !played && S.allMatches.filter(x => x.alliances.red.score === -1)[0]?.key === m.key;
-      const isSelected = m.key === S.selectedMatchKey;
-      const checkmark = played ? ' ✓' : '';
-      const nextTag = isNext ? ' ← Next' : '';
-      const label = `${abbr} ${m.match_number}${checkmark}${nextTag}`;
-      return `<option value="${m.key}"${isSelected ? ' selected' : ''}>${label}</option>`;
-    }).join('');
-    return `
-      <div style="margin-bottom:14px;">
-        <select onchange="selectMatch(this.value)"
-          style="width:100%;padding:10px 14px;border-radius:10px;border:1.5px solid rgba(255,255,255,0.15);
-                 background:#0d1629;color:#F4F4EE;font-size:15px;font-weight:600;
-                 font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;-webkit-appearance:none;
-                 background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22><path d=%22M1 1l5 5 5-5%22 stroke=%22%23EFAB28%22 stroke-width=%222%22 fill=%22none%22 stroke-linecap=%22round%22/></svg>');
-                 background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;">
-          ${options}
-        </select>
-      </div>`;
-  };
-
-  // ── Empty / loading states ──
-  if (S.loadingMatch) return `
-    <div style="padding:24px;text-align:center;">
-      <div style="font-size:32px;margin-bottom:12px;">⏳</div>
-      <div style="font-size:16px;color:rgba(244,244,238,0.6);">Loading match…</div>
-    </div>`;
-
-  if (S.matchError) return `
-    <div class="view-pad">
-      ${matchSelector()}
-      <div class="card" style="padding:24px;text-align:center;">
-        <div style="font-size:14px;color:#ef4444;margin-bottom:12px;">${S.matchError}</div>
-        <button class="btn-primary" onclick="loadNextMatch()">Retry</button>
-      </div>
-    </div>`;
-
-  if (!S.matchData) return `
-    <div class="view-pad">
-      <div class="card" style="padding:40px 24px;text-align:center;">
-        <div style="font-size:40px;margin-bottom:12px;">⚡</div>
-        <div style="font-size:17px;font-weight:700;color:#F4F4EE;margin-bottom:8px;">Match Viewer</div>
-        <div style="font-size:14px;color:rgba(244,244,238,0.5);margin-bottom:20px;">Load your event schedule to browse<br>any match with scouting stats and predictions.</div>
-        <button class="btn-primary" onclick="loadNextMatch()" style="padding:12px 28px;font-size:16px;">Load Matches</button>
-      </div>
-    </div>`;
-
-  if (S.matchData.done) return `
-    <div class="view-pad">
-      ${matchSelector()}
-      <div class="card" style="padding:40px 24px;text-align:center;">
-        <div style="font-size:40px;margin-bottom:12px;">🏁</div>
-        <div style="font-size:17px;font-weight:700;color:#F4F4EE;margin-bottom:8px;">All matches complete!</div>
-        <div style="font-size:14px;color:rgba(244,244,238,0.5);">No upcoming matches found for Team 6328.</div>
-      </div>
-    </div>`;
-
-  const { matchNum, compLevel, redTeams, blueTeams, predicted, played, redScore, blueScore, redRPs, blueRPs } = S.matchData;
-  const label = compLevel === 'sf' ? `Semifinal Match ${matchNum}` : compLevel === 'f' ? `Final Match ${matchNum}` : `Qualification Match ${matchNum}`;
-  const statusBadge = played
-    ? `<span style="font-size:11px;font-weight:700;color:#16a34a;background:rgba(22,163,74,0.15);padding:3px 8px;border-radius:6px;">PLAYED</span>`
-    : `<span style="font-size:11px;font-weight:700;color:#EFAB28;background:rgba(239,171,40,0.15);padding:3px 8px;border-radius:6px;">UPCOMING</span>`;
-
-  // Official score banner (played matches only)
-  const officialScore = played ? (() => {
-    const redWon = redScore > blueScore;
-    const blueWon = blueScore > redScore;
-    const winnerLabel = redWon ? `<span style="font-size:11px;font-weight:700;color:#ef4444;">RED WINS</span>`
-                      : blueWon ? `<span style="font-size:11px;font-weight:700;color:#3b82f6;">BLUE WINS</span>`
-                      : `<span style="font-size:11px;font-weight:700;color:rgba(244,244,238,0.5);">TIE</span>`;
-    const rpPill = (rps, color) => rps != null
-      ? `<div style="margin-top:5px;font-size:11px;font-weight:700;color:${color};background:rgba(0,0,0,0.25);border-radius:6px;padding:2px 8px;letter-spacing:0.02em;">${rps} RP</div>`
-      : '';
-    return `
-      <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,0.3);border-radius:14px;padding:14px 18px;margin-bottom:14px;border:1px solid rgba(255,255,255,0.06);">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-          <div style="font-size:11px;font-weight:700;color:#ef4444;text-transform:uppercase;letter-spacing:0.06em;">Red</div>
-          <div style="font-size:38px;font-weight:800;color:${redWon?'#ef4444':'#F4F4EE'};line-height:1;">${redScore}</div>
-          ${rpPill(redRPs, '#ef4444')}
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-          ${winnerLabel}
-          <div style="font-size:10px;font-weight:600;color:rgba(244,244,238,0.3);text-transform:uppercase;letter-spacing:0.05em;">Final Score</div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-          <div style="font-size:11px;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:0.06em;">Blue</div>
-          <div style="font-size:38px;font-weight:800;color:${blueWon?'#3b82f6':'#F4F4EE'};line-height:1;">${blueScore}</div>
-          ${rpPill(blueRPs, '#3b82f6')}
-        </div>
-      </div>`;
-  })() : '';
-
-  return `
-    <div class="view-pad">
-      <!-- Match selector -->
-      ${matchSelector()}
-
-      <!-- Header -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <div>
-          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">
-            <span style="font-size:19px;font-weight:800;color:#F4F4EE;">${label}</span>
-            ${statusBadge}
-          </div>
-          <div style="font-size:12px;color:rgba(244,244,238,0.4);margin-top:2px;">Team 6328 · ${settings.eventCode?.toUpperCase()}</div>
-        </div>
-        <button onclick="loadNextMatch()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:rgba(244,244,238,0.7);font-size:12px;font-weight:600;padding:8px 12px;border-radius:10px;cursor:pointer;flex-shrink:0;">🔄</button>
-      </div>
-
-      <!-- Official score (played matches only) -->
-      ${officialScore}
-
-      <!-- Alliances -->
-      <div style="display:flex;gap:10px;">
-        <!-- RED -->
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:800;color:#ef4444;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-            <span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;"></span>Red Alliance
-          </div>
-          ${redTeams.map(n => teamCard(n, 'red')).join('')}
-        </div>
-        <!-- BLUE -->
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:800;color:#3b82f6;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-            <span style="width:10px;height:10px;border-radius:50%;background:#3b82f6;display:inline-block;"></span>Blue Alliance
-          </div>
-          ${blueTeams.map(n => teamCard(n, 'blue')).join('')}
-        </div>
-      </div>
-
-      <!-- Prediction -->
-      ${predictionBar(predicted)}
-    </div>
-  `;
-}
-
-function parseScoutingCSV(text) {
-  const lines = text.trim().split('\n');
-  if (lines.length < 2) return null;
-
-  // Parse header (handle quoted fields)
-  function parseLine(line) {
-    const result = [];
-    let cur = '', inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (c === '"') { inQ = !inQ; }
-      else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
-      else { cur += c; }
-    }
-    result.push(cur);
-    return result;
-  }
-
-  const headers = parseLine(lines[0]);
+// Simple CSV parser — handles quoted fields with commas and escaped quotes
+function parseCSV(text) {
   const rows = [];
-  for (let i = 1; i < lines.length; i++) {
-    if (!lines[i].trim()) continue;
-    const vals = parseLine(lines[i]);
-    const row = {};
-    headers.forEach((h, idx) => { row[h.trim()] = (vals[idx] || '').trim(); });
+  // Normalize line endings
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  for (const line of lines) {
+    const row = [];
+    let field = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQ && line[i + 1] === '"') { field += '"'; i++; }
+        else inQ = !inQ;
+      } else if (ch === ',' && !inQ) {
+        row.push(field.trim()); field = '';
+      } else {
+        field += ch;
+      }
+    }
+    row.push(field.trim());
     rows.push(row);
   }
-
-  // Group by team and compute stats
-  const byTeam = {};
-  for (const r of rows) {
-    const team = parseInt(r['Team']);
-    if (!team) continue;
-    if (!byTeam[team]) byTeam[team] = [];
-    byTeam[team].push(r);
-  }
-
-  const stats = {};
-  for (const [team, matches] of Object.entries(byTeam)) {
-    const autoFuels = matches.map(m => parseFloat(m['AutoHubFuelSuccess']) || 0);
-    const teleFuels = matches.map(m => parseFloat(m['TotalTeleHubFuelSuccess']) || 0);
-
-    const climbAttempts = matches.filter(m =>
-      (parseInt(m['TeleClimbL1'])||0) + (parseInt(m['TeleClimbL2'])||0) + (parseInt(m['TeleClimbL3'])||0) > 0
-    ).length;
-    const climbSuccesses = matches.filter(m =>
-      (parseInt(m['TeleClimbL1Success'])||0) + (parseInt(m['TeleClimbL2Success'])||0) + (parseInt(m['TeleClimbL3Success'])||0) > 0
-    ).length;
-
-    const sum = arr => arr.reduce((a,b)=>a+b, 0);
-    const avg = arr => arr.length ? (sum(arr)/arr.length) : 0;
-
-    stats[team] = {
-      matches: matches.length,
-      avgAutoFuel: avg(autoFuels),
-      bestAutoFuel: Math.max(...autoFuels),
-      avgTeleFuel: avg(teleFuels),
-      bestTeleFuel: Math.max(...teleFuels),
-      climbAttempts,
-      climbSuccesses,
-      climbAttemptRate: matches.length ? (climbAttempts / matches.length) : 0,
-      climbSuccessRate: climbAttempts ? (climbSuccesses / climbAttempts) : 0,
-    };
-  }
-  return stats;
+  return rows;
 }
 
-function handleCSVImport(input) {
+// Parse rows from CSV and populate excelKFactors + empiricalData (same logic as XLSX path)
+function applySheetData(toolRows, logRows) {
+  // K-factors from My Tooling rows 23-27 (0-indexed 22-26)
+  excelKFactors = {};
+  for (let i = 22; i <= 26 && i < toolRows.length; i++) {
+    const row = toolRows[i];
+    const alloy = String(row[1] || '').trim();
+    const k     = parseFloat(row[2]);
+    if (alloy && !isNaN(k)) excelKFactors[alloy] = k;
+  }
+
+  // Test bend log — data from row 6 (index 5)
+  empiricalData = {};
+  let totalBends = 0;
+  for (let i = 5; i < logRows.length; i++) {
+    const row   = logRows[i];
+    const alloy = String(row[1] || '').trim();
+    const thick = parseFloat(row[2]);
+    const vOpen = parseFloat(row[3]);
+    const angle = parseFloat(row[5]);
+    const bd    = parseFloat(row[12]);
+    const k     = parseFloat(row[13]);
+    if (!alloy || isNaN(thick) || isNaN(vOpen) || isNaN(angle) || isNaN(bd)) continue;
+    if (alloy.includes('←') || alloy.toLowerCase().includes('e.g.')) continue;
+    const key = `${alloy}|${Math.round(thick * 10000)}|${Math.round(vOpen * 10000)}|${Math.round(angle)}`;
+    if (!empiricalData[key]) empiricalData[key] = { bds: [], ks: [] };
+    empiricalData[key].bds.push(bd);
+    if (!isNaN(k)) empiricalData[key].ks.push(k);
+    totalBends++;
+  }
+  return { totalBends, combos: Object.keys(empiricalData).length };
+}
+
+function setConnStatus(msg, type) {
+  const el = document.getElementById('conn-sub');
+  el.textContent = msg;
+  el.className = 'conn-sub' + (type === 'ok' ? ' ok' : type === 'err' ? ' err' : '');
+}
+
+function setConnLoaded(totalBends, combos, label) {
+  excelLoaded = true;
+  document.getElementById('conn-bar').classList.add('connected');
+  document.getElementById('conn-bar').classList.remove('error');
+  document.getElementById('eb-stats').style.display   = 'flex';
+  document.getElementById('eb-bend-count').textContent  = totalBends;
+  document.getElementById('eb-combo-count').textContent = combos;
+  setConnStatus(`Connected · ${totalBends} test bend${totalBends !== 1 ? 's' : ''} · ${combos} material/die combos`, 'ok');
+  const now = new Date();
+  document.getElementById('eb-last-sync').textContent =
+    now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  document.getElementById('gs-refresh-btn').style.display = 'inline-flex';
+  updateDieDots();
+  updateKFactor();
+  calc();
+}
+
+async function connectGS(isRefresh) {
+  const url = document.getElementById('gs-url-input').value.trim();
+  if (!url) { setConnStatus('Paste your Google Sheet URL first', 'err'); return; }
+
+  const id = extractSheetId(url);
+  if (!id) { setConnStatus('⚠ That doesn\'t look like a valid Google Sheets URL', 'err'); return; }
+
+  gsSheetId = id;
+  const btn = document.getElementById('gs-connect-btn');
+  btn.textContent = 'Connecting…';
+  btn.disabled = true;
+  if (!isRefresh) setConnStatus('Fetching data from Google Sheets…');
+
+  // Google Sheets gviz CSV endpoint — works for "Anyone with link can view" sheets
+  const base     = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv`;
+  const toolUrl  = `${base}&sheet=My%20Tooling`;
+  const logUrl   = `${base}&sheet=Test%20Bend%20Log`;
+
+  try {
+    const [toolResp, logResp] = await Promise.all([fetch(toolUrl), fetch(logUrl)]);
+    if (!toolResp.ok || !logResp.ok) throw new Error('HTTP ' + (toolResp.status || logResp.status));
+
+    const [toolCSV, logCSV] = await Promise.all([toolResp.text(), logResp.text()]);
+
+    // Sanity check — if we got an HTML error page instead of CSV
+    if (toolCSV.trim().startsWith('<')) throw new Error('Got HTML instead of CSV — check sharing settings');
+
+    const toolRows = parseCSV(toolCSV);
+    const logRows  = parseCSV(logCSV);
+    const { totalBends, combos } = applySheetData(toolRows, logRows);
+
+    setConnLoaded(totalBends, combos, 'Google Sheets');
+
+    // Auto-refresh every 60 seconds
+    if (gsRefreshTimer) clearInterval(gsRefreshTimer);
+    gsRefreshTimer = setInterval(() => connectGS(true), 60000);
+
+  } catch(err) {
+    document.getElementById('conn-bar').classList.add('error');
+    setConnStatus('⚠ Could not connect. Make sure sharing is set to "Anyone with the link can view" — ' + err.message, 'err');
+    console.error(err);
+  }
+
+  btn.textContent = 'Connect';
+  btn.disabled = false;
+}
+
+// ─── Local Excel file fallback ────────────────────────────────────────────────
+function loadExcel(input) {
   const file = input.files[0];
   if (!file) return;
+
   const reader = new FileReader();
-  reader.onload = e => {
-    const stats = parseScoutingCSV(e.target.result);
-    if (!stats || Object.keys(stats).length === 0) {
-      alert('Could not parse CSV — make sure it matches the expected format.');
-      return;
-    }
-    setImportData(stats);
-    alert(`Imported data for ${Object.keys(stats).length} teams across matches.`);
-    nav('insights');
-  };
-  reader.readAsText(file);
-}
-
-function insightsView() {
-  const importData = getImportData();
-  const teams = getTeams();
-  const tba = getTBACache();
-  const hasData = Object.keys(importData).length > 0;
-  const sort = S.insightSort || 'avgTeleFuel';
-  const dir = S.insightDir || 'desc';
-
-  // Build a quick rank+RP+avgScore lookup from cached TBA rankings
-  const rankLookup = {};
-  if (tba?.rankings?.rankings) {
-    tba.rankings.rankings.forEach(r => {
-      const num = parseInt(r.team_key.replace('frc',''));
-      const rpAvg = r.sort_orders?.[0] ?? 0;
-      const avgScore = r.sort_orders?.[1] ?? null;
-      const played = r.matches_played ?? 0;
-      rankLookup[num] = {
-        rank: r.rank,
-        totalRPs: played > 0 ? Math.round(rpAvg * played) : 0,
-        avgScore: avgScore != null ? parseFloat(avgScore.toFixed(1)) : null,
-      };
-    });
-  }
-
-  // Build rows merging TBA team names + rankings with import stats
-  let rows = [];
-  if (hasData) {
-    for (const [teamNum, stats] of Object.entries(importData)) {
-      const num = parseInt(teamNum);
-      const t = Object.values(teams).find(t => t.number == num);
-      const rk = rankLookup[num] || {};
-      rows.push({ teamNum: num, name: t?.name || '', rank: rk.rank ?? null, totalRPs: rk.totalRPs ?? null, avgScore: rk.avgScore ?? null, ...stats });
-    }
-    rows.sort((a, b) => {
-      const av = a[sort] ?? (sort === 'rank' ? 9999 : 0);
-      const bv = b[sort] ?? (sort === 'rank' ? 9999 : 0);
-      return dir === 'desc' ? bv - av : av - bv;
-    });
-  }
-
-  // colBtn: defaultDir lets rank column default to ascending on first click
-  const colBtn = (key, label, defaultDir='desc', width='') => {
-    const active = sort === key;
-    const arrow = active ? (dir === 'desc' ? ' ↓' : ' ↑') : '';
-    const nextDir = active ? (dir === 'desc' ? 'asc' : 'desc') : defaultDir;
-    return `<th onclick="(function(){S.insightSort='${key}';S.insightDir='${nextDir}';render();})()"
-      style="padding:10px 8px;text-align:center;font-size:12px;font-weight:700;color:${active?'#EFAB28':'rgba(244,244,238,0.6)'};cursor:pointer;white-space:nowrap;border-bottom:2px solid rgba(255,255,255,0.08);user-select:none;${width?'width:'+width+';':''}">
-      ${label}${arrow}</th>`;
-  };
-
-  const climbBadge = (attempts, successes, total) => {
-    if (attempts === 0) return `<span style="color:rgba(244,244,238,0.3);font-size:13px;">—</span>`;
-    const pct = Math.round((successes/attempts)*100);
-    const color = pct >= 75 ? '#16a34a' : pct >= 40 ? '#EFAB28' : '#ef4444';
-    return `<div style="font-size:14px;font-weight:700;color:${color};">${successes}/${attempts}</div>
-            <div style="font-size:11px;color:rgba(244,244,238,0.45);">${pct}% • ${attempts} of ${total}m</div>`;
-  };
-
-  const fuelCell = (avg, best) => `
-    <div style="font-size:16px;font-weight:700;color:#F4F4EE;">${avg.toFixed(1)}</div>
-    <div style="font-size:11px;color:rgba(244,244,238,0.45);">best ${best}</div>`;
-
-  return `
-    <div class="view-pad">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div>
-          <div style="font-size:20px;font-weight:800;color:#F4F4EE;">Insights</div>
-          ${hasData ? `<div style="font-size:12px;color:rgba(244,244,238,0.45);">${Object.keys(importData).length} teams · tap column to sort${Object.keys(rankLookup).length > 0 ? ' · ranks from TBA' : ' · load TBA for ranks'}</div>` : ''}
-        </div>
-        <label style="background:#EFAB28;color:#151D3B;font-size:13px;font-weight:700;padding:9px 14px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:6px;">
-          📥 Import CSV
-          <input type="file" accept=".csv" style="display:none;" onchange="handleCSVImport(this)">
-        </label>
-      </div>
-
-      ${!hasData ? `
-        <div class="card" style="padding:40px 24px;text-align:center;">
-          <div style="font-size:40px;margin-bottom:12px;">📊</div>
-          <div style="font-size:17px;font-weight:700;color:#F4F4EE;margin-bottom:8px;">No scouting data yet</div>
-          <div style="font-size:14px;color:rgba(244,244,238,0.5);">Import your team's CSV export to see<br>per-team fuel and climb breakdowns.</div>
-        </div>
-      ` : `
-        <div class="card" style="padding:0;overflow:hidden;">
-          <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;min-width:360px;">
-              <thead>
-                <tr style="background:rgba(0,0,0,0.3);">
-                  ${colBtn('teamNum','Team','asc','36%')}
-                  ${colBtn('rank','RPs','asc','16%')}
-                  ${colBtn('avgAutoFuel','Auto','desc','16%')}
-                  ${colBtn('avgTeleFuel','Tele','desc','16%')}
-                  ${colBtn('climbSuccessRate','Climb','desc','16%')}
-                </tr>
-              </thead>
-              <tbody>
-                ${rows.map((r, i) => {
-                  const { primary, secondary, textColor } = teamColors(r.teamNum);
-                  const rpCell = r.totalRPs != null
-                    ? `<div style="font-size:15px;font-weight:700;color:#EFAB28;">${r.totalRPs} RP</div>
-                       ${r.avgScore != null ? `<div style="font-size:11px;color:rgba(244,244,238,0.45);">avg ${r.avgScore}</div>` : ''}`
-                    : `<span style="color:rgba(244,244,238,0.3);font-size:13px;">—</span>`;
-                  return `<tr style="border-bottom:1px solid rgba(255,255,255,0.05);${i%2===0?'background:rgba(0,0,0,0.1);':''}">
-                    <td style="padding:10px 8px;">
-                      <div style="display:flex;align-items:center;gap:8px;">
-                        ${r.rank != null ? `<div style="font-size:12px;font-weight:700;color:rgba(244,244,238,0.35);min-width:22px;text-align:right;">#${r.rank}</div>` : ''}
-                        <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,${primary},${secondary});flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-                          <span style="font-size:9px;font-weight:800;color:${textColor};line-height:1;text-align:center;">${r.teamNum}</span>
-                        </div>
-                        <div style="min-width:0;">
-                          <div style="font-size:14px;font-weight:700;color:#F4F4EE;">${r.teamNum}</div>
-                          ${r.name ? `<div style="font-size:11px;font-weight:600;color:rgba(244,244,238,0.45);text-transform:uppercase;letter-spacing:0.03em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.name}</div>` : ''}
-                        </div>
-                      </div>
-                    </td>
-                    <td style="padding:10px 8px;text-align:center;">${rpCell}</td>
-                    <td style="padding:10px 8px;text-align:center;">${fuelCell(r.avgAutoFuel, r.bestAutoFuel)}</td>
-                    <td style="padding:10px 8px;text-align:center;">${fuelCell(r.avgTeleFuel, r.bestTeleFuel)}</td>
-                    <td style="padding:10px 8px;text-align:center;">${climbBadge(r.climbAttempts, r.climbSuccesses, r.matches)}</td>
-                  </tr>`;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `}
-    </div>
-  `;
-}
-
-function settingsView() {
-  const s = getSettings();
-  const fields = s.customFields || [];
-  const fieldChips = fields.map((f,i)=>`
-    <div class="field-chip">
-      <span style="font-size:16px;">${typeIcon(f.type)}</span>
-      <div style="flex:1;">
-        <span style="font-weight:600;color:#F4F4EE;">${esc(f.name)}</span>
-        <span style="font-size:12px;color:rgba(244,244,238,0.45);margin-left:6px;">${f.type}${f.options?` · ${esc(f.options)}`:''}</span>
-      </div>
-      <button onclick="removeField(${i})" style="color:rgba(248,113,113,0.8);font-size:20px;font-weight:700;background:none;border:none;cursor:pointer;padding:0 4px;">×</button>
-    </div>
-  `).join('');
-
-  return `
-    <div class="view-pad">
-      <!-- TBA API -->
-      <div class="card" style="padding:18px;margin-bottom:14px;">
-        <div class="section-label">The Blue Alliance</div>
-        <div style="margin-bottom:12px;">
-          <label style="font-size:14px;font-weight:600;color:rgba(244,244,238,0.7);display:block;margin-bottom:6px;">API Key</label>
-          <input class="form-input" id="set-api" type="text" value="${esc(s.apiKey||'')}" placeholder="Paste your TBA read API key here" autocomplete="off">
-        </div>
-        <div style="margin-bottom:8px;">
-          <label style="font-size:14px;font-weight:600;color:rgba(244,244,238,0.7);display:block;margin-bottom:6px;">Event Code</label>
-          <input class="form-input" id="set-event" type="text" value="${esc(s.eventCode||'')}" placeholder="e.g. 2026nyny or 2026necmp" autocapitalize="none">
-        </div>
-        <div style="font-size:14px;color:rgba(244,244,238,0.5);margin-top:8px;line-height:1.5;">
-          Need a free API key? Visit <strong>thebluealliance.com/account</strong><br>
-          Find event codes at <strong>thebluealliance.com/events/2026</strong>
-        </div>
-      </div>
-      <button class="btn-primary" id="save-set-btn" onclick="saveSettingsFn()" style="margin-bottom:20px;">Save Settings</button>
-
-      <!-- Custom Fields -->
-      <div class="card" style="padding:18px;margin-bottom:14px;">
-        <div class="section-label">Custom Scouting Fields</div>
-        <div style="font-size:14px;color:rgba(244,244,238,0.55);margin-bottom:14px;">Add fields you want to fill in for each team — toggles, dropdowns, numbers, or text.</div>
-        ${fieldChips}
-        <button class="btn-secondary" onclick="showAddField()" style="margin-top:4px;">+ Add Field</button>
-      </div>
-
-      <!-- Data Management -->
-      <div class="card" style="padding:18px;margin-bottom:14px;">
-        <div class="section-label">Data</div>
-        <button class="btn-secondary" onclick="exportData()" style="margin-bottom:10px;">📤 Export Scouting Data (.json)</button>
-        <button class="btn-secondary" onclick="document.getElementById('import-input').click()" style="margin-bottom:10px;">📥 Import Scouting Data</button>
-        <button class="btn-danger" onclick="clearData()">🗑️ Clear All Data</button>
-        <input type="file" id="import-input" accept=".json" style="display:none;" onchange="importData(this)">
-      </div>
-
-      <!-- iPad Tip -->
-      <div class="card" style="padding:18px;margin-bottom:14px;text-align:center;">
-        <div style="font-size:32px;margin-bottom:8px;">📱</div>
-        <div style="font-weight:700;color:#F4F4EE;margin-bottom:4px;">Use as iPad App</div>
-        <div style="font-size:14px;color:rgba(244,244,238,0.55);line-height:1.5;">Open this file in <strong>Safari</strong> on your iPad, then tap the Share button and choose <strong>"Add to Home Screen"</strong> for a full-screen app experience.</div>
-      </div>
-
-      <div style="text-align:center;padding:8px 0 4px;font-family:'Plus Jakarta Sans', sans-serif;color:rgba(244,244,238,0.35);font-size:13px;letter-spacing:0.05em;">FRC 6328 · MECHANICAL ADVANTAGE · LITTLETON, MA</div>
-    </div>
-  `;
-}
-
-function typeIcon(t) { return {toggle:'🔘',text:'📝',number:'🔢',select:'📋'}[t]||'📝'; }
-
-function saveSettingsFn() {
-  const s = getSettings();
-  s.apiKey = document.getElementById('set-api')?.value.trim() || '';
-  s.eventCode = document.getElementById('set-event')?.value.trim().toLowerCase() || '';
-  setSettings(s);
-  const btn = document.getElementById('save-set-btn');
-  if (btn) { btn.textContent='✅ Saved!'; setTimeout(()=>{btn.textContent='Save Settings';},1800); }
-}
-
-function removeField(i) {
-  const s = getSettings();
-  s.customFields = (s.customFields||[]);
-  s.customFields.splice(i,1);
-  setSettings(s);
-  render();
-}
-
-function showAddField() {
-  document.getElementById('addFieldModal')?.remove();
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay'; modal.id = 'addFieldModal';
-  modal.onclick = e => { if(e.target===modal) modal.remove(); };
-  modal.innerHTML = `
-    <div class="modal-sheet">
-      <div class="modal-handle"></div>
-      <h2 style="font-size:18px;font-weight:700;color:#F4F4EE;margin-bottom:20px;">Add Custom Field</h2>
-      <div style="margin-bottom:14px;">
-        <label style="font-size:14px;font-weight:600;color:rgba(244,244,238,0.7);display:block;margin-bottom:6px;">Field Name *</label>
-        <input class="form-input" id="nf-name" type="text" placeholder="e.g. Can Climb, Auto Strategy">
-      </div>
-      <div style="margin-bottom:14px;">
-        <label style="font-size:14px;font-weight:600;color:rgba(244,244,238,0.7);display:block;margin-bottom:6px;">Field Type</label>
-        <select class="form-input" id="nf-type" onchange="toggleFieldTypeOptions()">
-          <option value="toggle">Yes / No Toggle</option>
-          <option value="text">Short Text</option>
-          <option value="number">Number</option>
-          <option value="select">Dropdown Options</option>
-        </select>
-      </div>
-      <div id="nf-opts-div" style="display:none;margin-bottom:14px;">
-        <label style="font-size:14px;font-weight:600;color:rgba(244,244,238,0.7);display:block;margin-bottom:6px;">Options (comma-separated)</label>
-        <input class="form-input" id="nf-opts" type="text" placeholder="Fast, Medium, Slow">
-      </div>
-      <div id="nf-ph-div" style="display:none;margin-bottom:14px;">
-        <label style="font-size:14px;font-weight:600;color:rgba(244,244,238,0.7);display:block;margin-bottom:6px;">Placeholder hint (optional)</label>
-        <input class="form-input" id="nf-ph" type="text" placeholder="e.g. Enter count…">
-      </div>
-      <div style="display:flex;gap:10px;margin-top:4px;">
-        <button class="btn-secondary" onclick="document.getElementById('addFieldModal').remove()">Cancel</button>
-        <button class="btn-primary" onclick="doAddField()">Add Field</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(modal);
-}
-
-function toggleFieldTypeOptions() {
-  const t = document.getElementById('nf-type')?.value;
-  const od = document.getElementById('nf-opts-div');
-  const pd = document.getElementById('nf-ph-div');
-  if (od) od.style.display = t==='select'?'block':'none';
-  if (pd) pd.style.display = (t==='text'||t==='number')?'block':'none';
-}
-
-function doAddField() {
-  const name = document.getElementById('nf-name')?.value.trim();
-  const type = document.getElementById('nf-type')?.value||'text';
-  const opts = document.getElementById('nf-opts')?.value.trim();
-  const ph = document.getElementById('nf-ph')?.value.trim();
-  if (!name) { alert('Please enter a field name.'); return; }
-  const s = getSettings(); if(!s.customFields) s.customFields=[];
-  const field = { name, type };
-  if (type==='select'&&opts) field.options=opts;
-  if (ph) field.placeholder=ph;
-  s.customFields.push(field);
-  setSettings(s);
-  document.getElementById('addFieldModal')?.remove();
-  render();
-}
-
-// ══════════════════════════════════════════
-//  EXPORT / IMPORT
-// ══════════════════════════════════════════
-function exportData() {
-  const s = getSettings();
-  const blob = new Blob([JSON.stringify({
-    version:1, exportedAt: new Date().toISOString(),
-    settings: s, teams: getTeams(), scouting: getScoutAll()
-  }, null, 2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `frc-scout-${s.eventCode||'data'}-${new Date().toISOString().slice(0,10)}.json`;
-  a.click(); URL.revokeObjectURL(a.href);
-}
-
-function importData(input) {
-  const file = input.files?.[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = function(e) {
     try {
-      const data = JSON.parse(e.target.result);
-      if (data.scouting) LS.set('frc_scout', data.scouting);
-      if (data.teams) setTeams(data.teams);
-      if (data.settings) setSettings(data.settings);
-      alert('✅ Data imported successfully!');
-      render();
-    } catch { alert('Failed to import: invalid file.'); }
+      const data = new Uint8Array(e.target.result);
+      const wb   = XLSX.read(data, { type: 'array' });
+
+      const toolWS   = wb.Sheets['My Tooling'];
+      const toolRows = XLSX.utils.sheet_to_json(toolWS, { header: 1, defval: '' });
+      const logWS    = wb.Sheets['Test Bend Log'];
+      const logRows  = XLSX.utils.sheet_to_json(logWS,  { header: 1, defval: '' });
+
+      const { totalBends, combos } = applySheetData(toolRows, logRows);
+      setConnLoaded(totalBends, combos, file.name);
+      // Clear any GS auto-refresh since we're using a static file
+      if (gsRefreshTimer) { clearInterval(gsRefreshTimer); gsRefreshTimer = null; }
+
+    } catch(err) {
+      setConnStatus('⚠ Error reading file — make sure it\'s Titan25T_Bend_Reference.xlsx', 'err');
+      console.error(err);
+    }
   };
-  reader.readAsText(file);
+  reader.readAsArrayBuffer(file);
 }
 
-function clearData() {
-  if (confirm('Delete all scouting notes, ratings, and team cache? (Photos will remain.)')) {
-    localStorage.removeItem('frc_scout');
-    localStorage.removeItem('frc_teams');
-    localStorage.removeItem('frc_tba');
-    render();
+// Mark die buttons with green dot if any empirical data exists for current material+thickness
+function updateDieDots() {
+  if (!excelLoaded) return;
+  const alloy    = getAlloy();
+  const T        = parseFloat(document.getElementById('thickness').value) || 0;
+  const angleDeg = parseFloat(document.getElementById('angle').value) || 90;
+  const exKey    = ALLOY_TO_EXCEL[alloy.val] || alloy.val;
+
+  const dieVals = [0.630, 0.866, 1.378, 1.969, 0.984];
+  dieVals.forEach(v => {
+    const key  = `${exKey}|${Math.round(T * 10000)}|${Math.round(v * 10000)}|${Math.round(angleDeg)}`;
+    const btn  = document.getElementById(DIE_IDS[v]);
+    const data = empiricalData[key];
+    if (btn) btn.classList.toggle('has-data', !!(data && data.bds.length > 0));
+  });
+}
+
+// ─── Material setup ───────────────────────────────────────────────────────────
+function setMaterial(m) {
+  mat = m;
+  document.getElementById('btn-al').classList.toggle('active', m === 'aluminum');
+  document.getElementById('btn-ms').classList.toggle('active', m === 'mild_steel');
+  const sel = document.getElementById('alloy');
+  sel.innerHTML = ALLOYS[m].map(a => `<option value="${a.val}">${a.label}</option>`).join('');
+  updateKFactor();
+}
+
+function updateKFactor() {
+  const alloy  = getAlloy();
+  const exKey  = ALLOY_TO_EXCEL[alloy.val] || alloy.val;
+  const kField = document.getElementById('kfactor');
+  const badge  = document.getElementById('k-source-badge');
+
+  // Prefer: empirical avg K for this combo → Excel My Tooling K → default
+  const empKey  = getExcelKey();
+  const empData = empiricalData[empKey];
+
+  if (empData && empData.ks.length >= 2) {
+    const avgK = empData.ks.reduce((a, b) => a + b, 0) / empData.ks.length;
+    kField.value  = avgK.toFixed(3);
+    badge.textContent = 'from test bends';
+    badge.className   = 'badge from-excel';
+  } else if (excelKFactors[exKey] !== undefined) {
+    kField.value  = excelKFactors[exKey].toFixed(2);
+    badge.textContent = 'from Excel';
+    badge.className   = 'badge from-excel';
+  } else {
+    kField.value  = alloy.k;
+    badge.textContent = 'default';
+    badge.className   = 'badge';
+  }
+
+  const R = currentDieV * 0.16;
+  document.getElementById('k-info').innerHTML =
+    `<strong>${alloy.val}</strong> — K = ${kField.value} · Inside R from die = ${R.toFixed(3)}" · ` +
+    (excelLoaded ? 'K updated from your Excel data.' : 'Load Excel to use your empirical K-factors.');
+
+  updateDieDots();
+  calc();
+}
+
+// ─── Die selection ────────────────────────────────────────────────────────────
+function selectDie(vOpen, name, btn, isAcute) {
+  currentDieV   = vOpen;
+  currentDieName = name;
+  document.querySelectorAll('.die-btn').forEach(b => b.classList.remove('active','acute-active'));
+  btn.classList.add(isAcute ? 'acute-active' : 'active');
+  updateDieAdvice(isAcute);
+  updateKFactor();
+}
+
+function updateDieAdvice(isAcute) {
+  const el = document.getElementById('die-advice');
+  if (isAcute) {
+    el.innerHTML = `<strong style="color:var(--accent2)">Acute Die selected</strong> — use the 35° Heavy Duty punch, overbend past your target angle and let springback bring it to the final angle.`;
+    return;
+  }
+  const T = parseFloat(document.getElementById('thickness').value) || 0.125;
+  const lo = (currentDieV / 8).toFixed(3), hi = (currentDieV / 6).toFixed(3);
+  const ok = T >= parseFloat(lo) && T <= parseFloat(hi);
+  const empKey = getExcelKey();
+  const emp    = empiricalData[empKey];
+  const empStr = emp && emp.bds.length > 0
+    ? ` · <span style="color:var(--green)">★ ${emp.bds.length} test bend${emp.bds.length>1?'s':''} logged for this combo</span>`
+    : (excelLoaded ? ' · <span style="color:var(--muted)">no test bends yet for this combo</span>' : '');
+  el.innerHTML =
+    `<strong>${currentDieName}</strong> — V = ${currentDieV}" · Ideal T: ${lo}"–${hi}" · Inside R ≈ ${(currentDieV * 0.16).toFixed(3)}"<br>` +
+    `Thickness ${ok ? '<span style="color:var(--green)">✓ in range</span>' : '<span style="color:var(--yellow)">⚠ outside ideal range</span>'}${empStr}`;
+}
+
+// ─── Punch selection ──────────────────────────────────────────────────────────
+function setPunch(p) {
+  currentPunch = p;
+  document.getElementById('punch-35').classList.toggle('active', p === '35deg');
+  document.getElementById('punch-88').classList.toggle('active', p === '88deg');
+  calc();
+}
+
+// ─── Thickness change ─────────────────────────────────────────────────────────
+function onThicknessChange() {
+  suggestDie();
+  updateDieAdvice(false);
+  updateDieDots();
+  calc();
+}
+
+function suggestDie() {
+  const T = parseFloat(document.getElementById('thickness').value);
+  if (!T) return;
+  const faces = [
+    { v:0.630, id:'die-0630', name:'Standard 4-Way · Face 1' },
+    { v:0.866, id:'die-0866', name:'Standard 4-Way · Face 2' },
+    { v:1.378, id:'die-1378', name:'Standard 4-Way · Face 3' },
+    { v:1.969, id:'die-1969', name:'Standard 4-Way · Face 4' },
+  ];
+  let best = faces[0], bestDiff = Infinity;
+  for (const f of faces) {
+    const d = Math.abs(f.v - T * 7);
+    if (d < bestDiff) { bestDiff = d; best = f; }
+  }
+  currentDieV   = best.v;
+  currentDieName = best.name;
+  document.querySelectorAll('.die-btn').forEach(b => b.classList.remove('active','acute-active'));
+  document.getElementById(best.id).classList.add('active');
+
+  // Gauge badge
+  const gaugeMap = [[0.036,'20ga'],[0.048,'18ga'],[0.060,'16ga'],[0.075,'14ga'],
+                    [0.090,'13ga'],[0.105,'12ga'],[0.125,'11ga'],[0.135,'10ga'],
+                    [0.187,'3/16"'],[0.250,'1/4"']];
+  let g = '';
+  for (const [t, lbl] of gaugeMap) { if (Math.abs(T - t) < 0.008) { g = lbl; break; } }
+  document.getElementById('gauge-badge').textContent = g;
+}
+
+// ─── Main calculation ─────────────────────────────────────────────────────────
+function calc() {
+  const T        = parseFloat(document.getElementById('thickness').value) || 0;
+  const K        = parseFloat(document.getElementById('kfactor').value)   || 0.38;
+  const angleDeg = parseFloat(document.getElementById('angle').value)     || 90;
+  const partLen  = parseFloat(document.getElementById('partlen').value)   || 12;
+  const leg1     = parseFloat(document.getElementById('leg1').value)      || 0;
+  const leg2     = parseFloat(document.getElementById('leg2').value)      || 0;
+  const alloy    = getAlloy();
+
+  const R     = currentDieV * 0.16;
+  const theta = (180 - angleDeg) * Math.PI / 180;
+  const BA    = theta * (R + K * T);
+  const OSSB  = Math.tan(theta / 2) * (R + T);
+  const BD    = 2 * OSSB - BA;
+
+  // ── Empirical BD lookup
+  const empKey  = getExcelKey();
+  const empData = empiricalData[empKey];
+  const empBDs  = empData ? empData.bds : [];
+  const avgEmpBD = empBDs.length > 0
+    ? empBDs.reduce((a, b) => a + b, 0) / empBDs.length
+    : null;
+
+  // Use empirical BD for flat length if available, otherwise theoretical
+  const activeBD  = avgEmpBD !== null ? avgEmpBD : BD;
+  const flat      = leg1 + leg2 - activeBD;
+
+  // ── Render theoretical BD
+  document.getElementById('r-bd-theor').textContent = BD.toFixed(4) + '"';
+  document.getElementById('r-bd-theor-sub').textContent = `K = ${K} · theoretical`;
+
+  // ── Render empirical BD
+  const empEl    = document.getElementById('r-bd-emp');
+  const empSubEl = document.getElementById('r-bd-emp-sub');
+  const empCntEl = document.getElementById('emp-count');
+  const useBtn   = document.getElementById('use-emp-btn');
+  const bdCard   = document.getElementById('bd-card');
+
+  if (!excelLoaded) {
+    empEl.className   = 'compare-val no-emp';
+    empEl.textContent = 'load Excel';
+    empSubEl.textContent = 'avg of your test bends';
+    empCntEl.textContent = '';
+    useBtn.style.display = 'none';
+    bdCard.className = 'result-card highlight';
+  } else if (avgEmpBD !== null) {
+    const delta = avgEmpBD - BD;
+    empEl.className   = 'compare-val empirical';
+    empEl.textContent = avgEmpBD.toFixed(4) + '"';
+    empSubEl.textContent = `Δ ${delta >= 0 ? '+' : ''}${delta.toFixed(4)}" vs theoretical`;
+    empSubEl.style.color = Math.abs(delta) > 0.010 ? 'var(--yellow)' : 'var(--green)';
+    empCntEl.textContent = `(${empBDs.length} bend${empBDs.length > 1 ? 's' : ''})`;
+    useBtn.style.display = 'inline-flex';
+    bdCard.className = 'result-card empirical';
+  } else {
+    empEl.className   = 'compare-val no-emp';
+    empEl.textContent = '— no data';
+    empSubEl.textContent = 'run test bends for this combo';
+    empSubEl.style.color = 'var(--muted)';
+    empCntEl.textContent = '';
+    useBtn.style.display = 'none';
+    bdCard.className = 'result-card highlight';
+  }
+
+  // ── Other results
+  setR('r-ba',    BA);
+  setR('r-ossb',  OSSB);
+  setR('r-radius', R);
+  setR('r-flat',  flat);
+
+  // Tonnage
+  const mf        = TONNAGE_FACTOR[mat];
+  const tonsPerFt = (T * T * 575 / currentDieV) * mf;
+  const totalTons = tonsPerFt * (partLen / 12);
+  const pct       = Math.min(totalTons / 25 * 100, 100);
+  const tc        = document.getElementById('tonnage-card');
+  const fill      = document.getElementById('tonnage-fill');
+  document.getElementById('r-tonnage').innerHTML = totalTons.toFixed(1) + '<span class="runit">T</span>';
+  document.getElementById('r-tonnage-sub').textContent = `${tonsPerFt.toFixed(1)} T/ft × ${(partLen/12).toFixed(2)} ft`;
+  document.getElementById('tbar-label').textContent    = totalTons.toFixed(1) + 'T used';
+  fill.style.width = pct + '%';
+  if (pct < 70) { fill.style.background='var(--green)'; tc.className='result-card ok-card'; }
+  else if (pct < 90) { fill.style.background='var(--yellow)'; tc.className='result-card warn-card'; }
+  else { fill.style.background='var(--red)'; tc.className='result-card err-card'; }
+
+  // Die rec
+  const faces    = [0.630, 0.866, 1.378, 1.969];
+  const faceNames= ['Face 1 — 0.630"','Face 2 — 0.866"','Face 3 — 1.378"','Face 4 — 1.969"'];
+  let bi = 0, bd2 = Infinity;
+  faces.forEach((v,i) => { const d=Math.abs(v-T*7); if(d<bd2){bd2=d;bi=i;} });
+  document.getElementById('r-die-rec').textContent     = faceNames[bi];
+  document.getElementById('r-die-rec-sub').textContent = `Ideal V ≈ ${(T*7).toFixed(3)}" (7×T)`;
+
+  // K info
+  document.getElementById('k-info').innerHTML =
+    `<strong>${alloy.val}</strong> — K = ${K} · Inside R = ${R.toFixed(3)}" (from die) · ` +
+    (excelLoaded && avgEmpBD !== null
+      ? `<span style="color:var(--green)">Flat length uses empirical BD</span>`
+      : 'Flat length uses theoretical BD');
+
+  updateDieAdvice(false);
+}
+
+// ─── Use empirical BD as override ────────────────────────────────────────────
+function useEmpiricalBD() {
+  // Recalculate K from empirical BD so K-factor field reflects reality
+  const empKey  = getExcelKey();
+  const empData = empiricalData[empKey];
+  if (!empData || empData.ks.length === 0) return;
+  const avgK = empData.ks.reduce((a, b) => a + b, 0) / empData.ks.length;
+  document.getElementById('kfactor').value = avgK.toFixed(4);
+  document.getElementById('k-source-badge').textContent = 'empirical';
+  document.getElementById('k-source-badge').className   = 'badge from-excel';
+  calc();
+}
+
+// ─── K back-calculator ────────────────────────────────────────────────────────
+function calcK() {
+  const F  = parseFloat(document.getElementById('bc-blank').value) || 0;
+  const m1 = parseFloat(document.getElementById('bc-m1').value)    || 0;
+  const m2 = parseFloat(document.getElementById('bc-m2').value)    || 0;
+  const T  = parseFloat(document.getElementById('thickness').value)|| 0;
+  const angleDeg = parseFloat(document.getElementById('angle').value) || 90;
+  const theta = (180 - angleDeg) * Math.PI / 180;
+  const R  = currentDieV * 0.16;
+  const OSSB = Math.tan(theta / 2) * (R + T);
+  const BA   = F - m1 - m2 + 2 * OSSB;
+  const Kc   = (BA / theta - R) / T;
+
+  const el    = document.getElementById('r-kback');
+  const elsub = document.getElementById('r-kback-sub');
+  if (!isFinite(Kc) || T <= 0) { el.textContent='—'; elsub.textContent='Enter valid measurements'; return; }
+  el.textContent = Kc.toFixed(4);
+  if (Kc < 0.25 || Kc > 0.55) {
+    elsub.textContent = '⚠ Unusual value — check measurements';
+    el.style.color = 'var(--yellow)';
+  } else {
+    elsub.textContent = `Then log this bend in the Excel spreadsheet`;
+    el.style.color = 'var(--green)';
   }
 }
 
-// ══════════════════════════════════════════
-//  UTILITIES
-// ══════════════════════════════════════════
-function esc(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function setR(id, val) {
+  const el   = document.getElementById(id);
+  const unit = el.querySelector('.runit');
+  el.childNodes[0].textContent = isNaN(val)||!isFinite(val) ? '—' : Math.abs(val).toFixed(4);
+  if (unit) el.appendChild(unit);
 }
 
-// ══════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════
-initDB().then(render);
+function resetAll() {
+  setMaterial('aluminum');
+  document.getElementById('thickness').value = '0.125';
+  document.getElementById('angle').value     = '90';
+  document.getElementById('partlen').value   = '12';
+  document.getElementById('leg1').value      = '2.000';
+  document.getElementById('leg2').value      = '2.000';
+  document.getElementById('bc-blank').value  = '6.000';
+  document.getElementById('bc-m1').value     = '3.000';
+  document.getElementById('bc-m2').value     = '3.000';
+  setPunch('35deg');
+  selectDie(0.630,'Standard 4-Way · Face 1', document.getElementById('die-0630'));
+  updateKFactor();
+  calcK();
+
+  // Auto-connect to Reframe Systems bend reference sheet
+  const DEFAULT_GS = 'https://docs.google.com/spreadsheets/d/1DK7jcVe8IroCCyOH6Bcm7bIbyBCxTImmxBSk6A1ty3k/edit?usp=sharing';
+  document.getElementById('gs-url-input').value = DEFAULT_GS;
+  connectGS();
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+setMaterial('aluminum');
+calcK();
 </script>
+
+<footer style="margin-top:32px; padding-top:20px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <svg width="20" height="20" viewBox="72 -2 147 148" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M202.831 54.3792C205.244 56.6989 204.583 60.7432 201.46 61.9076C192.33 65.3118 182.432 67.175 172.092 67.175C146.93 67.175 124.382 56.1409 109.155 38.7132C107.535 36.859 107.739 34.0544 109.513 32.3502L141.464 1.64528C143.284 -0.103442 146.137 -0.10344 147.956 1.64528L202.831 54.3792Z" fill="#0DAB4A"/>
+      <path d="M215.489 77.9013C215.489 75.0927 213.101 72.8792 210.359 73.3024C176.783 78.4857 149.657 103.535 141.039 136.237C140.274 139.141 142.51 141.891 145.478 141.891L210.772 141.891C213.377 141.891 215.489 139.752 215.489 137.114L215.489 77.9013Z" fill="#0DAB4A"/>
+      <path d="M121.34 141.891C123.361 141.891 125.171 140.59 125.742 138.626C127.994 130.886 129.203 122.693 129.203 114.214C129.203 87.7109 117.395 64.0012 98.8164 48.1863C97.044 46.6776 94.4464 46.8289 92.7669 48.4429L75.4015 65.1309C74.4631 66.0328 73.9316 67.2854 73.9316 68.5957V137.114C73.9316 139.752 76.0431 141.891 78.6477 141.891H121.34Z" fill="#0DAB4A"/>
+    </svg>
+    <span style="font-size:12px;color:var(--muted);">A <a href="https://www.reframe.systems" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">Reframe Systems</a> internal tool · Titan 25T Microfactory</span>
+  </div>
+  <span style="font-size:11px;color:var(--border);">Bend values are estimates — always verify with test bends before production runs</span>
+</footer>
+
 </body>
 </html>
